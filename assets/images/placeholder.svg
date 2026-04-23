@@ -1,0 +1,12 @@
+<svg width="800" height="500" viewBox="0 0 800 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="500" fill="#F9FAFB"/>
+  <rect x="0" y="0" width="800" height="500" fill="#F3F4F6"/>
+  <g opacity="0.4">
+    <path d="M400 120L280 220V380H520V220L400 120Z" stroke="#9CA3AF" stroke-width="4"/>
+    <path d="M370 300H430V380H370V300Z" stroke="#9CA3AF" stroke-width="4"/>
+    <circle cx="480" cy="180" r="30" stroke="#9CA3AF" stroke-width="2"/>
+  </g>
+  <text x="50%" y="460" text-anchor="middle" fill="#374151" font-family="system-ui, -apple-system, sans-serif" font-size="40" font-weight="800" letter-spacing="2">COMING SOON</text>
+  <rect x="250" y="230" width="300" height="60" rx="30" fill="#E5E7EB"/>
+  <text x="50%" y="270" text-anchor="middle" fill="#6B7280" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600">PHOTO PENDING</text>
+</svg>

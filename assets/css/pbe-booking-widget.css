@@ -1,0 +1,287 @@
+/* ==========================================================================
+   PBE Booking Widget Styles
+   Modular styles specifically for the single property booking widget.
+   ========================================================================== */
+
+.pbe-booking-widget-container {
+    background: #fff;
+    border: 1px solid var(--pbe-border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    transition: box-shadow 0.2s ease;
+}
+
+
+.pbe-widget-price {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--pbe-primary);
+    margin-bottom: 20px;
+}
+.pbe-widget-price span {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--pbe-text);
+}
+
+.pbe-min-stay-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff8e1;
+    color: #b45309;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 15px;
+    font-weight: 500;
+    border-left: 4px solid #f59e0b;
+}
+
+/* Litepicker popup needs to appear ABOVE the widget card */
+.litepicker {
+    z-index: 99999 !important;
+}
+
+/* Suppress the Flatpickr calendar on booking widget inputs (booking widget uses Litepicker) */
+.pbe-booking-widget-container .flatpickr-calendar {
+    display: none !important;
+}
+
+/* Book Now / Reserve button */
+.pbe-reserve-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--pbe-button, #196EE6);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 14px rgba(25, 110, 230, 0.3);
+    font-family: var(--pbe-font);
+}
+.pbe-reserve-btn:hover:not(:disabled) {
+    background: var(--pbe-button-hover, #1e293b);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.pbe-reserve-btn:disabled {
+    background: var(--pbe-button);
+    color: #fff;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+    opacity: 0.7;
+}
+
+/* --- Litepicker Modern Theme (Airbnb Style) --- */
+.litepicker {
+    --lp-button-bg: var(--pbe-button);
+    --lp-button-color: #fff;
+    --lp-range-color: #f7f7f7;
+    --lp-selected-color: #fff;
+    --lp-selected-bg: #6366F1;
+    font-family: var(--pbe-font) !important;    
+    border-radius: 16px !important;    
+    padding: 15px !important;
+}
+
+.litepicker .container__months {
+    padding: 10px !important;
+}
+
+.litepicker .month-item-header {
+    font-weight: 700 !important;
+    font-size: 16px !important;
+}
+
+.litepicker .month-item-weekdays-row > div {
+    font-weight: 700 !important;
+    color: #717171 !important;
+    font-size: 12px !important;
+}
+
+.litepicker .day-item {
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    color: #334155 !important;
+    padding: 10px 0 !important;
+}
+
+/* Today style: Sync with backend Subtle Border setting (Indigo fallback) */
+.litepicker .day-item.is-today {
+    color: var(--pbe-accent, #6366F1) !important;
+    box-shadow: inset 0 0 0 2px var(--pbe-accent-muted, #6366F133) !important;
+    border-radius: 4px !important;
+}
+
+/* Hover style: Subtle Indigo ring to match Today. Excludes already selected dates to prevent white-out bug. */
+.litepicker .day-item:not(.is-locked):not(.is-start-date):not(.is-end-date):not(.pbe-custom-start-date):hover {
+    box-shadow: inset 0 0 0 2px var(--pbe-accent, #6366F1) !important;
+    border-radius: 4px !important;
+    background-color: transparent !important;
+}
+
+/* Ensure selected dates maintain their solid background even when hovered */
+.litepicker .day-item.is-start-date:hover,
+.litepicker .day-item.is-end-date:hover,
+.litepicker .day-item.pbe-custom-start-date:hover {
+    background-color: var(--pbe-accent, #6366F1) !important;
+    box-shadow: none !important;
+    color: #fff !important;
+}
+
+/* Range styles */
+.litepicker .day-item.is-in-range {
+    background-color: #e0e7ff !important;
+    color: #1e1b4b !important;
+}
+
+.litepicker .day-item.is-start-date,
+.litepicker .day-item.is-end-date,
+.litepicker .day-item.pbe-custom-start-date {
+    background-color: var(--pbe-accent, #6366F1) !important;
+    color: #fff !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+}
+
+/* Disabled dates: Low opacity / grey appearance. Background none must NOT override selected dates (like check-outs). */
+.litepicker .day-item.is-locked:not(.is-start-date):not(.is-end-date):not(.pbe-custom-start-date) {
+    background: none !important;
+}
+.litepicker .day-item.is-locked {
+    color: #cbd5e1 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    position: relative !important;
+}
+
+/* (Cross-out is now handled via dynamic CSS injection in pbe-booking-widget.js) */
+
+/* Turnover Day Fix: Hide the cross-out if the date is currently selected as a start/end date or is in the hover range. 
+   This ensures that a booked date correctly 'un-crosses' itself when it becomes a valid checkout option. */
+.litepicker .day-item.is-start-date::after,
+.litepicker .day-item.is-end-date::after,
+.litepicker .day-item.is-in-range::after {
+    display: none !important;
+}
+
+
+.pbe-picker-error {
+    background: #fdf2f2; padding: 10px 14px; border-radius: 8px; color: #9b1c1c; font-size: 13px; font-weight: 500; margin-top: 10px; border: 1px solid #fbd5d5;
+}
+
+/* --- Price Breakdown (AJAX Target) --- */
+#pbe-price-breakdown-target {
+    margin-top: 24px;
+    padding-top: 10px;
+}
+
+.pbe-pb-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    color: #484848;
+    font-size: 15px;
+}
+
+.pbe-pb-row span:last-child {
+    font-weight: 500;
+}
+
+.pbe-pb-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+    color: #222;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+/* Subtle refinements for labels */
+.pbe-pb-row span:first-child {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: #ddd;
+}
+
+.pbe-pb-loading {
+    text-align: center;
+    padding: 20px;
+    color: #717171;
+    font-size: 14px;
+}
+
+.pbe-pb-error {
+    background: #fdf2f2;
+    color: #9b1c1c;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-top: 15px;
+    border: 1px solid #f8d7da;
+}
+
+/* --- Inline Min-Stay Badges --- */
+.litepicker .day-item {
+    position: relative !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    height: 44px !important;
+}
+
+/* (Styles moved and consolidated above) */
+
+/* --- Litepicker Reset Button --- */
+.litepicker .container__footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 15px;
+    border-top: 1px solid #efefef;
+    background: #f9f9f9;
+}
+
+.litepicker .container__footer .btn-reset {
+    background: transparent;
+    color: #4b5563;
+    border: none;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.litepicker .container__footer .btn-reset:hover {
+    color: #111827;
+}
+
+/* --- Tooltip (Native Widget Match) --- */
+.litepicker .container__tooltip {
+    background: #222 !important;
+    color: #fff !important;
+    padding: 6px 12px !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    z-index: 100000 !important;
+}
+
+.litepicker .container__tooltip::after {
+    border-top-color: #222 !important;
+}

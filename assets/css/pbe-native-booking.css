@@ -1,0 +1,624 @@
+/* Native Booking Widget - Glassmorphic / Modern / Premium */
+.pbe-native-booking-wrapper {
+    font-family: var(--pbe-font) !important;
+    background: #ffffff;
+    border: 1px solid #DDDDDD;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Step Indicators */
+.pbe-nb-steps {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding-bottom: 20px;
+}
+.pbe-nb-step {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #999;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+.pbe-nb-step.active {
+    color: #196EE6;
+    opacity: 1;
+}
+.pbe-nb-step.completed {
+    color: #2DBC7C;
+}
+.pbe-nb-step span {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #f1f1f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+}
+.pbe-nb-step.active span {
+    background: #196EE6;
+    color: #fff;
+}
+.pbe-nb-step.completed span {
+    background: #2DBC7C;
+    color: #fff;
+}
+
+/* Transitions */
+.pbe-nb-content {
+    display: none;
+    animation: pbeFadeSlide 0.4s ease forwards;
+}
+.pbe-nb-content.active {
+    display: block;
+}
+@keyframes pbeFadeSlide {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Step 1 Typography */
+.pbe-nb-price-header { margin-bottom: 24px; }
+.pbe-nb-amount { font-size: 26px; font-weight: 700; color: #1a1a1a; }
+.pbe-nb-label { font-size: 16px; color: #666; font-weight: 400; }
+
+/* Input Styling */
+.pbe-nb-inputs {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    overflow: visible; /* Fixed: Allow guest dropdown to pop out */
+    margin-bottom: 24px;
+    background: #fff;
+}
+.pbe-nb-input-group:first-child .pbe-nb-field:first-child { border-top-left-radius: 12px; }
+.pbe-nb-input-group:first-child .pbe-nb-field:last-child { border-top-right-radius: 12px; }
+.pbe-nb-input-group:last-child { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+.pbe-nb-input-group {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+}
+.pbe-nb-input-group:last-child { border-bottom: none; }
+.pbe-nb-field {
+    flex: 1;
+    padding: 12px 16px;
+}
+.pbe-nb-field:not(:last-child) { border-right: 1px solid #ddd; }
+.pbe-nb-form .pbe-nb-field { border-right: none !important; }
+.pbe-nb-field label,
+.pbe-nb-input-group.pbe-nb-guests label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--pbe-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.pbe-nb-field input {
+    border: none;
+    background: none;
+    padding: 0;
+    width: 100%;
+    font-size: 1rem;
+    color: #757575;
+    cursor: pointer;
+}
+.pbe-nb-field input:focus { outline: none; }
+
+/* Guests Dropdown */
+.pbe-nb-input-group.pbe-nb-guests {
+    flex-direction: column;
+    padding: 12px 16px;
+    position: relative;
+    cursor: pointer;
+}
+.pbe-nb-guest-trigger {
+    font-size: 1rem;
+    color: #757575;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    width: 100%;
+}
+.pbe-nb-guest-trigger::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid #8E8E8E;
+    border-bottom: 2px solid #8E8E8E;
+    transform: rotate(45deg);
+    transition: transform 0.3s;
+    margin-right: 4px;
+}
+.pbe-nb-guest-dropdown.active + .pbe-nb-guest-trigger::after {
+    transform: rotate(-135deg);
+    margin-bottom: -4px;
+}
+
+.pbe-nb-guest-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    z-index: 1000;
+    display: none;
+    max-height: 250px;
+    overflow-y: auto;
+    margin-top: 8px; 
+    padding: 10px; /* Internal padding for premium look */
+}
+.pbe-nb-guest-dropdown.active { 
+    display: block; 
+    animation: pbeFadeInUp 0.2s ease-out;
+}
+.pbe-nb-guest-option {
+    padding: 10px 15px;
+    font-size: 16px;
+    color: #334155;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border-radius: 8px;
+    margin-bottom: 2px;
+}
+.pbe-nb-guest-option:last-child { margin-bottom: 0; }
+.pbe-nb-guest-option:hover { background: #f1f5f9; }
+.pbe-nb-guest-option.active {
+    background: #196EE6 !important;
+    color: #fff !important;
+    font-weight: 600;
+}
+
+@keyframes pbeFadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+/* --- Price Breakdown Sync --- */
+#pbe-nb-price-breakdown {
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+.pbe-pb-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    color: #484848;
+    font-size: 15px;
+}
+.pbe-pb-row span:last-child {
+    font-weight: 500;
+}
+.pbe-pb-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+    color: #222;
+    font-size: 17px;
+    font-weight: 800;
+}
+.pbe-pb-row span:first-child {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: #ddd;
+}
+.pbe-pb-loading {
+    text-align: center;
+    padding: 20px;
+    color: #717171;
+    font-size: 14px;
+}
+.pbe-pb-error {
+    background: #fdf2f2;
+    color: #9b1c1c;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-top: 15px;
+    border: 1px solid #f8d7da;
+}
+
+/* Button Styling */
+.pbe-nb-next-btn {
+    width: 100%;
+    padding: 16px;
+    background: #196EE6;
+    color: #fff;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.3s;
+}
+.pbe-nb-next-btn:hover:not(:disabled) {
+    background: #155bb5;
+    transform: translateY(-2px);
+}
+.pbe-nb-next-btn:disabled {
+    background: #c8d6e8;
+    cursor: not-allowed;
+}
+.pbe-nb-next-btn.primary {
+    background: linear-gradient(135deg, #196EE6 0%, #0c4a9e 100%);
+    padding: 20px;
+}
+.pbe-nb-back-link {
+    background: none;
+    border: none;
+    color: #196EE6;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* Step 2 Form - Changed to 1 Column */
+.pbe-nb-content h3 { font-size: 20px; margin-bottom: 8px; color: #1a1a1a; }
+.pbe-nb-subtitle { font-size: 14px; color: #666; margin-bottom: 24px; }
+.pbe-nb-form { display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 24px; }
+.pbe-nb-field.full { grid-column: span 1; }
+.pbe-nb-form input, .pbe-nb-form textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    font-size: 16px;
+    background: #fff;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+.pbe-nb-form input:focus {
+    border-color: #196EE6;
+    box-shadow: 0 0 0 4px rgba(25, 110, 230, 0.1);
+    outline: none;
+}
+.pbe-nb-form label { 
+    display: block; 
+    font-size: 11px; 
+    font-weight: 700; 
+    margin-bottom: 8px; 
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #444;
+}
+.pbe-nb-form .pbe-nb-field {
+    padding: 0;
+    border-right: none !important;
+}
+
+#pbe-native-widget {
+    position: relative !important;
+}
+
+#pbe-native-widget .litepicker {
+    position: absolute !important;
+    top: 220px !important;
+    right: 50px !important;
+    left: auto !important;
+    max-width: none !important;
+    z-index: 99999 !important;
+    transform: none !important;
+}
+
+/* Litepicker Premium Match - Sync with Property Widget */
+:root {
+    --lp-button-bg: #222;
+    --lp-button-color: #fff;
+    --lp-accent-color: #222;
+    --lp-range-color: #e0e7ff;
+}
+
+
+.litepicker {
+    --lp-selected-color: #fff;
+    --lp-selected-bg: #222;
+    font-family: var(--pbe-font) !important;    
+    border-radius: 16px !important;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.12) !important;
+    border: none !important;
+    z-index: 99999 !important;
+}
+
+.litepicker .container__months {
+    padding: 5px !important;
+}
+
+.litepicker .month-item-header {
+    font-weight: 700 !important;
+    font-size: 16px !important;
+    color: #222 !important;
+}
+
+.litepicker .month-item-weekdays-row > div {
+    font-weight: 700 !important;
+    color: #717171 !important;
+    font-size: 12px !important;
+}
+
+.litepicker .day-item {
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    color: #222 !important;
+    padding: 10px 0 !important;
+    height: 44px !important;
+    position: relative !important;
+}
+
+/* Today style: Sync with backend Subtle Border setting (Indigo fallback) */
+.litepicker .day-item.is-today {
+    color: var(--pbe-accent, #6366F1) !important;
+    box-shadow: inset 0 0 0 2px var(--pbe-accent-muted, #6366F133) !important;
+    border-radius: 4px !important;
+}
+
+/* Hover style: Subtle Indigo ring to match Today. Excludes already selected dates to prevent white-out bug. */
+.litepicker .day-item:not(.is-locked):not(.is-start-date):not(.is-end-date):not(.pbe-nb-checkin-selected):hover {
+    box-shadow: inset 0 0 0 2px var(--pbe-accent, #6366F1) !important;
+    border-radius: 4px !important;
+    background-color: transparent !important;
+}
+
+/* Ensure selected dates maintain their solid background even when hovered */
+.litepicker .day-item.is-start-date:hover,
+.litepicker .day-item.is-end-date:hover,
+.litepicker .day-item.pbe-nb-checkin-selected:hover {
+    background-color: var(--pbe-accent, #6366F1) !important;
+    box-shadow: none !important;
+    color: #fff !important;
+}
+
+/* Range styles */
+.litepicker .day-item.is-in-range {
+    background-color: #e0e7ff !important;
+    color: #1e1b4b !important;
+}
+
+.litepicker .day-item.is-start-date,
+.litepicker .day-item.is-end-date,
+.litepicker .day-item.pbe-nb-checkin-selected {
+    background-color: var(--pbe-accent, #6366F1) !important;
+    color: #fff !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+}
+
+/* Disabled / Booked dates. Background none must NOT override selected dates (like check-outs). */
+.litepicker .day-item.is-locked:not(.is-start-date):not(.is-end-date):not(.pbe-nb-checkin-selected) {
+    background: none !important;
+}
+.litepicker .day-item.is-locked {
+    color: #cbd5e1 !important;
+    opacity: 0.6 !important;
+    position: relative !important;
+    text-decoration: none !important;
+    cursor: not-allowed !important;
+}
+
+/* Turnover Day Fix: Hide the cross-out if the date is in range or selected.
+   The cross-out itself is now handled via dynamic CSS injection in pbe-native-booking.js */
+.litepicker .day-item.is-start-date::after,
+.litepicker .day-item.is-end-date::after,
+.litepicker .day-item.is-in-range::after {
+    display: none !important;
+}
+
+.litepicker .container__tooltip {
+    background: #222 !important;
+    color: #fff !important;
+    padding: 6px 12px !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+
+/* Litepicker Reset Button Sync */
+.litepicker .container__footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 15px;
+    border-top: 1px solid #efefef;
+    background: #f9f9f9;
+}
+
+.litepicker .container__footer .button-clear {
+    background: transparent !important;
+    color: #4b5563 !important;
+    border: none !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    text-decoration: underline !important;
+    cursor: pointer !important;
+    padding: 5px !important;
+    transition: color 0.2s !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    opacity: 1 !important;
+    width: auto !important;
+}
+
+.litepicker .container__footer .button-clear:hover {
+    color: #111827 !important;
+}
+
+/* Navigation Arrow Refinement */
+.litepicker .month-item-header .button-previous-month,
+.litepicker .month-item-header .button-next-month {
+    color: #717171 !important;
+}
+.litepicker .month-item-header .button-previous-month:hover,
+.litepicker .month-item-header .button-next-month:hover {
+    color: #222 !important;
+    background: #f7f7f7 !important;
+    border-radius: 50% !important;
+}
+
+/* Step 3 Summary */
+.pbe-nb-summary-box {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+.pbe-nb-summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 14px;
+}
+.pbe-nb-summary-row.total {
+    border-top: 1px solid #ddd;
+    margin-top: 8px;
+    padding-top: 12px;
+    font-weight: 700;
+    font-size: 16px;
+}
+.pbe-nb-secure-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #2DBC7C;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+/* Stripe Payment Field Styling */
+.pbe-nb-payment-section {
+    margin-bottom: 24px;
+}
+.pbe-nb-payment-section label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #444;
+}
+.pbe-nb-stripe-field {
+    background: #fff;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+.pbe-nb-stripe-field.StripeElement--focus {
+    border-color: #196EE6;
+    box-shadow: 0 0 0 4px rgba(25, 110, 230, 0.1);
+}
+.pbe-nb-field-error {
+    color: #ef4444;
+    font-size: 13px;
+    margin-top: 8px;
+    font-weight: 500;
+    min-height: 18px;
+}
+.pbe-nb-receipt-link {
+    display: inline-block;
+    margin-top: 10px;
+    color: #196EE6;
+    text-decoration: underline;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Success State */
+#pbe-step-success { text-align: center; }
+.pbe-nb-success-icon { margin-bottom: 20px; }
+.pbe-nb-res-id {
+    margin-top: 15px;
+    margin-bottom: 30px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 13px;
+    color: #666;
+}
+.pbe-nb-success-summary {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 20px 0;
+    text-align: left;
+}
+.pbe-nb-success-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 14px;
+    color: #475569;
+}
+.pbe-nb-success-row:not(:last-child) {
+    border-bottom: 1px dashed #e2e8f0;
+}
+.pbe-nb-success-row span:first-child {
+    font-weight: 600;
+    color: #1e293b;
+}
+.pbe-nb-success-row .total {
+    color: #2DBC7C;
+    font-weight: 700;
+}
+
+/* Loader */
+#pbe-nb-loader {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 24px;
+}
+.pbe-nb-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #196EE6;
+    border-radius: 50%;
+    animation: pbeSpin 1s linear infinite;
+    margin-bottom: 15px;
+}
+@keyframes pbeSpin { 100% { transform: rotate(360deg); } }
+
+/* Badges */
+.pbe-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.pbe-status-confirmed { background: #E8F9F1; color: #2DBC7C; }
+.pbe-status-pending { background: #FFF9E6; color: #F5A623; }
+.pbe-status-cancelled { background: #FFE6E6; color: #D0021B; }
+
+@media (max-width: 768px) {
+    .pbe-native-booking-wrapper { position: relative; top: 0; margin-top: 30px; padding: 20px; }
+    .pbe-nb-form { grid-template-columns: 1fr; }
+    .pbe-nb-field.full { grid-column: span 1; }
+}
