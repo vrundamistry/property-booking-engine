@@ -38,6 +38,8 @@ require_once PBE_PLUGIN_DIR . 'platforms/guesty/class-pbe-guesty-api.php';
 require_once PBE_PLUGIN_DIR . 'platforms/guesty/class-pbe-guesty-adapter.php';
 require_once PBE_PLUGIN_DIR . 'platforms/hostaway/class-pbe-hostaway-api.php';
 require_once PBE_PLUGIN_DIR . 'platforms/hostaway/class-pbe-hostaway-adapter.php';
+require_once PBE_PLUGIN_DIR . 'platforms/ownerrez/class-pbe-ownerrez-api.php';
+require_once PBE_PLUGIN_DIR . 'platforms/ownerrez/class-pbe-ownerrez-adapter.php';
 
 /**
  * Initialize Plugin
