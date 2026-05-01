@@ -31,6 +31,7 @@ class PBE_Settings {
         }
     }
 
+
     public function enqueue_admin_scripts($hook) {
         if ($hook !== 'toplevel_page_pbe-platform-settings') {
             return;

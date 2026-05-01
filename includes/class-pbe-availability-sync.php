@@ -116,6 +116,14 @@ class PBE_Availability_Sync {
             $from
         ) );
 
+        // Clear historical dates older than 15 days to keep the database fast and optimized
+        $cutoff_date = date('Y-m-d', strtotime('-15 days'));
+        $wpdb->query( $wpdb->prepare(
+            "DELETE FROM $table_name WHERE platform_property_id = %s AND calendar_date < %s",
+            $platform_property_id,
+            $cutoff_date
+        ) );
+
         $days = array();
         if ( isset($calendar['data']['days']) && is_array($calendar['data']['days']) ) {
             $days = $calendar['data']['days'];
