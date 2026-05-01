@@ -26,10 +26,18 @@ while ( have_posts() ) :
     $lat         = get_post_meta( $pid, 'latitude',            true );
     $lng         = get_post_meta( $pid, 'longitude',           true );
     $address     = get_post_meta( $pid, 'full_address',        true );
+    $street      = get_post_meta( $pid, 'street',              true );
     $city        = get_post_meta( $pid, 'city',                true );
     $state       = get_post_meta( $pid, 'state',               true );
+    
+    if ( empty( $address ) ) {
+        $address_parts = array_filter( array( $street, $city, $state ) );
+        $address = implode( ', ', $address_parts );
+    }
     $prop_type   = get_post_meta( $pid, 'property_type',       true );
     $sqft        = get_post_meta( get_the_ID(), 'area_square_feet', true );
+    $area_size   = get_post_meta( get_the_ID(), 'area_size', true );
+    $area_unit   = get_post_meta( get_the_ID(), 'area_size_unit', true );
     $house_rules = get_post_meta( get_the_ID(), 'house_rules', true );
     $feat_img    = get_post_meta( $pid, 'featured_image_url',  true );
     $platform    = get_post_meta( $pid, 'platform_source',     true );
@@ -227,6 +235,11 @@ while ( have_posts() ) :
                     <div class="pbe-meta-icon pbe-icon-sqft"></div>
                     <span><?php echo esc_html( number_format( (int) $sqft ) ); ?> SQFT</span>
                 </div>
+                <?php elseif ( $area_size ) : ?>
+                <div class="pbe-meta-pill">
+                    <div class="pbe-meta-icon pbe-icon-sqft"></div>
+                    <span><?php echo esc_html( number_format( (int) $area_size ) ); ?> <?php echo esc_html( $area_unit ? $area_unit : 'SQFT' ); ?></span>
+                </div>
                 <?php endif; ?>
             </div>
 
@@ -270,8 +283,11 @@ while ( have_posts() ) :
             <?php if ( ! empty( $house_rules ) ) : ?>
             <div class="pbe-house-rules-section pbe-single-section">
                 <h2 class="pbe-single-heading">House Rules</h2>
-                <div class="pbe-single-text">
-                    <?php echo wpautop( wp_kses_post( $house_rules ) ); ?>
+                <div class="pbe-description-wrap">
+                    <div class="pbe-description-content pbe-single-text">
+                        <?php echo wpautop( wp_kses_post( $house_rules ) ); ?>
+                    </div>
+                    <button class="pbe-read-more-toggle">Read more</button>
                 </div>
             </div>
             <?php endif; ?>
@@ -319,7 +335,22 @@ while ( have_posts() ) :
 
             <!-- Availability Section -->
             <div class="pbe-availability-section pbe-single-section" id="pbe-section-availability">
-                <?php echo do_shortcode('[pbe_availability rows="2" cols="2" total_months="2" title="Availability Calendar"]'); ?>
+                <?php 
+                // Reverted back to using the key (without hyphens)
+                $property_key_raw = get_post_meta( get_the_ID(), 'propertyId_key', true );
+                $property_key = str_replace('-', '', $property_key_raw);
+                $calendar_widget_id = get_option('pbe_ownerrez_calendar_widget_id');
+                
+                if ( $platform === 'ownerrez' && ! empty( $property_key ) && ! empty( $calendar_widget_id ) ) {
+                    ?>
+                    <h2 class="pbe-single-heading">Availability Calendar</h2>
+                    <div class="ownerrez-widget" data-propertyId="<?php echo esc_attr( $property_key ); ?>" data-widget-type="Multiple Month Calendar" data-widgetId="<?php echo esc_attr( $calendar_widget_id ); ?>"></div>
+                    <script src="https://app.ownerrez.com/widget.js"></script>
+                    <?php
+                } else {
+                    echo do_shortcode('[pbe_availability rows="2" cols="2" total_months="2" title="Availability Calendar"]'); 
+                }
+                ?>
             </div>
 
             <!-- Map -->
@@ -360,11 +391,22 @@ while ( have_posts() ) :
             <button type="button" class="pbe-mobile-drawer-close">&times;</button>
             <div class="pbe-sticky-widget">
                 <?php 
-                $widget_type = get_option('pbe_default_booking_widget', 'standard');
-                if ( $widget_type === 'native' ) {
-                    echo do_shortcode( '[pbe_native_booking_widget id="' . get_the_ID() . '"]' );
+                $property_key_raw = get_post_meta( get_the_ID(), 'propertyId_key', true );
+                $property_key = str_replace('-', '', $property_key_raw);
+                $booking_widget_id = get_option('pbe_ownerrez_booking_widget_id');
+                
+                if ( $platform === 'ownerrez' && ! empty( $property_key ) && ! empty( $booking_widget_id ) ) {
+                    ?>
+                    <div class="ownerrez-widget" data-propertyId="<?php echo esc_attr( $property_key ); ?>" data-widget-type="Booking/Inquiry" data-widgetId="<?php echo esc_attr( $booking_widget_id ); ?>"></div>
+                    <script type="text/javascript" src="https://app.ownerrez.com/widget.js"></script>
+                    <?php
                 } else {
-                    echo do_shortcode( '[pbe_booking_widget id="' . get_the_ID() . '"]' );
+                    $widget_type = get_option('pbe_default_booking_widget', 'standard');
+                    if ( $widget_type === 'native' ) {
+                        echo do_shortcode( '[pbe_native_booking_widget id="' . get_the_ID() . '"]' );
+                    } else {
+                        echo do_shortcode( '[pbe_booking_widget id="' . get_the_ID() . '"]' );
+                    }
                 }
                 ?>
             </div>    
