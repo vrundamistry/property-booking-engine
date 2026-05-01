@@ -43,14 +43,13 @@ class PBE_Platform_Factory {
                 return new PBE_Hostaway_Adapter( $api_key, $account_id, $manual_token );
 
             case 'ownerrez':
-                $api_key    = get_option('pbe_ownerrez_api_key');
-                $api_secret = get_option('pbe_ownerrez_api_secret');
+                $basic_auth = get_option('pbe_ownerrez_basic_auth');
                 
-                if ( empty( $api_key ) || empty( $api_secret ) ) {
-                    return new WP_Error( 'missing_credentials', 'OwnerRez sync failed: API Key and API Secret are required in Platform Settings.' );
+                if ( empty( $basic_auth ) ) {
+                    return new WP_Error( 'missing_credentials', 'OwnerRez sync failed: Basic Auth Token is required in Platform Settings.' );
                 }
                 
-                return new WP_Error( 'not_implemented', 'OwnerRez adapter is not fully implemented yet.' );
+                return new PBE_OwnerRez_Adapter( $basic_auth );
 
             case 'hostfully':
                 $api_key = get_option('pbe_hostfully_api_key');

@@ -23,25 +23,19 @@ class PBE_Availability_Sync {
             set_time_limit(0);
         }
 
-        $platform_id = get_option('pbe_active_platform', 'guesty');
-        $adapter = PBE_Platform_Factory::get_adapter($platform_id);
-        
-        if ( is_wp_error($adapter) ) {
-            return $adapter;
-        }
-
-        $auth = $adapter->authenticate();
-        if ( is_wp_error($auth) || !$auth ) {
-            return new WP_Error('auth_failed', 'Authentication failed for the selected platform.');
-        }
+        // We will load the adapter dynamically per property
+        $platform_id = get_option('pbe_active_platform', 'guesty'); // Used as fallback later
 
         global $wpdb;
-        $active_properties = $wpdb->get_col("
+        $active_properties = $wpdb->get_col($wpdb->prepare("
             SELECT pm.meta_value FROM {$wpdb->postmeta} pm
             JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+            JOIN {$wpdb->postmeta} pm_source ON p.ID = pm_source.post_id
             WHERE pm.meta_key = 'platform_property_id' 
+            AND pm_source.meta_key = 'platform_source'
+            AND pm_source.meta_value = %s
             AND p.post_type = 'property' AND p.post_status = 'publish'
-        ");
+        ", $platform_id));
 
         if ( empty($active_properties) ) {
             update_option('pbe_avail_cron_offset', 0);
@@ -63,8 +57,29 @@ class PBE_Availability_Sync {
             return true;
         }
 
+        $authenticated_adapters = array();
+
         foreach ( $batch as $pid ) {
-            $this->sync_property_availability($pid, $adapter);
+            // Find the property's platform dynamically
+            $post_id = $wpdb->get_var($wpdb->prepare("SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = 'platform_property_id' AND meta_value = %s LIMIT 1", $pid));
+            $prop_platform = get_post_meta($post_id, 'platform_source', true);
+            
+            if (!$prop_platform) {
+                $prop_platform = $platform_id; // fallback
+            }
+            
+            if ( isset( $authenticated_adapters[ $prop_platform ] ) ) {
+                $this->sync_property_availability($pid, $authenticated_adapters[ $prop_platform ]);
+            } else {
+                $prop_adapter = PBE_Platform_Factory::get_adapter($prop_platform);
+                if ( !is_wp_error($prop_adapter) ) {
+                    $auth = $prop_adapter->authenticate();
+                    if ( !is_wp_error($auth) && $auth ) {
+                        $authenticated_adapters[ $prop_platform ] = $prop_adapter;
+                        $this->sync_property_availability($pid, $prop_adapter);
+                    }
+                }
+            }
         }
 
         // We are not at the end. Schedule a one-off mini cron to process the next batch in 20 seconds.
@@ -158,29 +173,22 @@ class PBE_Availability_Sync {
         $ids_string = isset($_POST['specific_ids']) ? sanitize_text_field($_POST['specific_ids']) : '';
 
         $platform_id = get_option('pbe_active_platform', 'guesty');
-        $adapter = PBE_Platform_Factory::get_adapter($platform_id);
-        
-        if ( is_wp_error($adapter) ) {
-            wp_send_json_error( $adapter->get_error_message() );
-        }
-
-        $auth = $adapter->authenticate();
-        if ( is_wp_error($auth) || !$auth ) {
-            wp_send_json_error('Authentication failed.');
-        }
-
+        // We will load the adapter dynamically per property
         global $wpdb;
         $target_ids = array();
 
         if ( $source === 'selected_ids' && !empty($ids_string) ) {
             $target_ids = array_filter( array_map( 'trim', explode( ',', $ids_string ) ) );
         } else {
-            $target_ids = $wpdb->get_col("
+            $target_ids = $wpdb->get_col($wpdb->prepare("
                 SELECT pm.meta_value FROM {$wpdb->postmeta} pm
                 JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+                JOIN {$wpdb->postmeta} pm_source ON p.ID = pm_source.post_id
                 WHERE pm.meta_key = 'platform_property_id' 
+                AND pm_source.meta_key = 'platform_source'
+                AND pm_source.meta_value = %s
                 AND p.post_type = 'property' AND p.post_status = 'publish'
-            ");
+            ", $platform_id));
         }
 
         if ( empty($target_ids) ) {
@@ -201,10 +209,34 @@ class PBE_Availability_Sync {
         }
 
         $count = 0;
+        $authenticated_adapters = array();
+
         foreach ( $batch_ids as $pid ) {
-            $res = self::sync_property_availability($pid, $adapter);
-            if ( ! is_wp_error($res) ) {
-                $count++;
+            // Find the property's platform dynamically
+            $post_id = $wpdb->get_var($wpdb->prepare("SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = 'platform_property_id' AND meta_value = %s LIMIT 1", $pid));
+            $prop_platform = get_post_meta($post_id, 'platform_source', true);
+            
+            if (!$prop_platform) {
+                $prop_platform = $platform_id; // fallback
+            }
+            
+            if ( isset( $authenticated_adapters[ $prop_platform ] ) ) {
+                $res = self::sync_property_availability($pid, $authenticated_adapters[ $prop_platform ]);
+                if ( ! is_wp_error($res) ) {
+                    $count++;
+                }
+            } else {
+                $prop_adapter = PBE_Platform_Factory::get_adapter($prop_platform);
+                if ( !is_wp_error($prop_adapter) ) {
+                    $auth = $prop_adapter->authenticate();
+                    if ( !is_wp_error($auth) && $auth ) {
+                        $authenticated_adapters[ $prop_platform ] = $prop_adapter;
+                        $res = self::sync_property_availability($pid, $prop_adapter);
+                        if ( ! is_wp_error($res) ) {
+                            $count++;
+                        }
+                    }
+                }
             }
         }
 

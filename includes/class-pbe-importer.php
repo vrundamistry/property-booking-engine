@@ -59,6 +59,7 @@ class PBE_Importer {
         }
 
         $auth = $adapter->authenticate();
+        //echo '<pre>'; print_r($auth); echo '</pre><br>'; die;
         
         if ( is_wp_error($auth) ) {
             return $auth;
@@ -68,15 +69,19 @@ class PBE_Importer {
             $sync_source = get_option('pbe_sync_source', 'all');
             $raw_properties = array();
 
+            $selected_ids = array();
+            if ( $sync_source === 'selected_ids' ) {
+                $ids_string = get_option('pbe_sync_property_ids', '');
+                $selected_ids = array_filter( array_map( 'trim', explode( ',', $ids_string ) ) );
+            }
+
             // Sync amenities globally on the first batch run
             if ( $skip == 0 && method_exists($adapter, 'sync_amenity_groups') ) {
-                $adapter->sync_amenity_groups();
+                $adapter->sync_amenity_groups($selected_ids);
             }
 
             if ( $sync_source === 'selected_ids' ) {
-                $ids_string = get_option('pbe_sync_property_ids', '');
-                // Clean up string, split by comma, remove empties
-                $ids = array_filter( array_map( 'trim', explode( ',', $ids_string ) ) );
+                $ids = $selected_ids;
                 
                 if ( empty( $ids ) ) {
                     return new WP_Error('no_ids', 'Sync source is set to Selected IDs, but no IDs were provided in settings.');
@@ -194,6 +199,21 @@ class PBE_Importer {
             }
             if ( isset($data['area_square_feet']) ) {
                 update_post_meta($post_id, 'area_square_feet', sanitize_text_field($data['area_square_feet']));
+            }
+            if ( isset($data['area_size']) ) {
+                update_post_meta($post_id, 'area_size', sanitize_text_field($data['area_size']));
+            }
+            if ( isset($data['area_size_unit']) ) {
+                update_post_meta($post_id, 'area_size_unit', sanitize_text_field($data['area_size_unit']));
+            }
+            if ( isset($data['sleeps_min']) ) {
+                update_post_meta($post_id, 'sleeps_min', intval($data['sleeps_min']));
+            }
+            if ( isset($data['sleeps_max']) ) {
+                update_post_meta($post_id, 'sleeps_max', intval($data['sleeps_max']));
+            }
+            if ( isset($data['propertyId_key']) && !empty($data['propertyId_key']) ) {
+                update_post_meta($post_id, 'propertyId_key', sanitize_text_field($data['propertyId_key']));
             }
             if ( isset($data['house_rules']) ) {
                 $rules = is_array($data['house_rules']) ? wp_json_encode($data['house_rules']) : $data['house_rules'];
@@ -413,6 +433,10 @@ class PBE_Importer {
                 
                 if ( ! empty($rev['reservation_id']) ) {
                     update_post_meta($review_post_id, 'pbe_platform_res_id', sanitize_text_field($rev['reservation_id']));
+                }
+
+                if ( ! empty($rev['listing_site']) ) {
+                    update_post_meta($review_post_id, 'pbe_listing_site', sanitize_text_field($rev['listing_site']));
                 }
                 
                 // Tag review with the same platform source as the parent property

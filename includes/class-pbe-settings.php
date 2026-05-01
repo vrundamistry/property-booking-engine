@@ -80,8 +80,9 @@ class PBE_Settings {
         register_setting('pbe_settings_group', 'pbe_hostaway_booking_domain');
         
         // OwnerRez
-        register_setting('pbe_settings_group', 'pbe_ownerrez_api_key');
-        register_setting('pbe_settings_group', 'pbe_ownerrez_api_secret');
+        register_setting('pbe_settings_group', 'pbe_ownerrez_basic_auth');
+        register_setting('pbe_settings_group', 'pbe_ownerrez_booking_widget_id');
+        register_setting('pbe_settings_group', 'pbe_ownerrez_calendar_widget_id');
         
         // Hostfully
         register_setting('pbe_settings_group', 'pbe_hostfully_api_key');
@@ -190,8 +191,13 @@ class PBE_Settings {
                     <div id="pbe_fields_ownerrez" class="pbe-platform-fields" style="display:none;">
                         <h3>OwnerRez Settings</h3>
                         <table class="form-table">
-                            <tr><th scope="row">API Key</th><td><input type="text" name="pbe_ownerrez_api_key" value="<?php echo esc_attr(get_option('pbe_ownerrez_api_key')); ?>" class="regular-text"></td></tr>
-                            <tr><th scope="row">API Secret</th><td><input type="password" name="pbe_ownerrez_api_secret" value="<?php echo esc_attr(get_option('pbe_ownerrez_api_secret')); ?>" class="regular-text"></td></tr>
+                            <tr>
+                                <th scope="row">Basic Auth Token</th>
+                                <td>
+                                    <input type="text" name="pbe_ownerrez_basic_auth" value="<?php echo esc_attr(get_option('pbe_ownerrez_basic_auth')); ?>" class="regular-text">
+                                    <p class="description">Paste your Basic Auth token here (the exact encoded string or token).</p>
+                                </td>
+                            </tr>
                         </table>
                     </div>
 
@@ -207,7 +213,7 @@ class PBE_Settings {
 
                     <h3>Global Display Settings</h3>
                     <table class="form-table">
-                        <tr>
+                        <tr class="pbe-default-widget-setting">
                             <th scope="row">Default Booking Widget</th>
                             <td>
                                 <select name="pbe_default_booking_widget">
@@ -215,6 +221,20 @@ class PBE_Settings {
                                     <option value="native" <?php selected(get_option('pbe_default_booking_widget'), 'native'); ?>>Native (On-Site Booking)</option>
                                 </select>
                                 <p class="description">Choose the default booking widget for all property pages.</p>
+                            </td>
+                        </tr>
+                        <tr class="pbe-ownerrez-global-setting" style="display:none;">
+                            <th scope="row">OwnerRez Booking Widget ID</th>
+                            <td>
+                                <input type="text" name="pbe_ownerrez_booking_widget_id" value="<?php echo esc_attr(get_option('pbe_ownerrez_booking_widget_id')); ?>" class="regular-text">
+                                <p class="description">Your global OwnerRez Booking Widget ID (e.g. 1a2b3c4d...)</p>
+                            </td>
+                        </tr>
+                        <tr class="pbe-ownerrez-global-setting" style="display:none;">
+                            <th scope="row">OwnerRez Calendar Widget ID</th>
+                            <td>
+                                <input type="text" name="pbe_ownerrez_calendar_widget_id" value="<?php echo esc_attr(get_option('pbe_ownerrez_calendar_widget_id')); ?>" class="regular-text">
+                                <p class="description">Your global OwnerRez Availability Calendar Widget ID.</p>
                             </td>
                         </tr>
                     </table>

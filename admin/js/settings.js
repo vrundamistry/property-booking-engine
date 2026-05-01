@@ -1,10 +1,17 @@
 jQuery(document).ready(function($) {
     
-    // Initial Setup: Show the fields for the currently selected platform
     function togglePlatformFields() {
         var selected = $('#pbe_active_platform').val();
         $('.pbe-platform-fields').hide(); // Hide all
         $('#pbe_fields_' + selected).fadeIn(); // Show specific
+        
+        if (selected === 'ownerrez') {
+            $('.pbe-default-widget-setting').hide();
+            $('.pbe-ownerrez-global-setting').fadeIn();
+        } else {
+            $('.pbe-default-widget-setting').fadeIn();
+            $('.pbe-ownerrez-global-setting').hide();
+        }
     }
     
     // Bind change event

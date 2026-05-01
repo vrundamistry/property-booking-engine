@@ -116,7 +116,12 @@ class PBE_Sync_Handler {
 
         if (class_exists('PBE_Importer')) {
             $importer = new PBE_Importer();
-            $platform_id = get_option('pbe_active_platform', 'guesty');
+            $platform_id = get_post_meta($post_id, 'platform_source', true);
+            
+            if (!$platform_id) {
+                wp_send_json_error('No platform source found for this property.');
+            }
+            
             $adapter = PBE_Platform_Factory::get_adapter($platform_id);
             
             if (is_wp_error($adapter)) wp_send_json_error($adapter->get_error_message());
