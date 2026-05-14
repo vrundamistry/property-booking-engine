@@ -25,6 +25,8 @@ $platform_source = get_post_meta( $property_id, 'platform_source', true );
 
 if ( $platform_source === 'hostaway' ) {
     $booking_domain = get_option('pbe_hostaway_booking_domain');
+} elseif ( $platform_source === 'hostfully' ) {
+    $booking_domain = get_option('pbe_hostfully_booking_slug');
 } else {
     $booking_domain = get_option('pbe_guesty_booking_domain', 'guestybookings.com');
 }

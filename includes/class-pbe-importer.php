@@ -240,13 +240,12 @@ class PBE_Importer {
                 update_post_meta($post_id, 'public_address', sanitize_text_field($data['public_address']));
             }
             if ( isset($data['street']) ) update_post_meta($post_id, 'street', sanitize_text_field($data['street']));
+            if ( isset($data['address2']) ) update_post_meta($post_id, 'address2', sanitize_text_field($data['address2']));
             if ( isset($data['city']) ) update_post_meta($post_id, 'city', sanitize_text_field($data['city']));
             if ( isset($data['state']) ) update_post_meta($post_id, 'state', sanitize_text_field($data['state']));
             if ( isset($data['country']) ) update_post_meta($post_id, 'country', sanitize_text_field($data['country']));
             if ( isset($data['country_code']) ) update_post_meta($post_id, 'country_code', sanitize_text_field($data['country_code']));
             if ( isset($data['zip']) ) update_post_meta($post_id, 'zip', sanitize_text_field($data['zip']));
-            
-
             
             // Amenities & Gallery
             if ( isset($data['amenities']) && is_array($data['amenities']) ) {
@@ -430,6 +429,10 @@ class PBE_Importer {
                 update_post_meta($review_post_id, 'pbe_review_id', sanitize_text_field($ext_id));
                 update_post_meta($review_post_id, 'pbe_rating', sanitize_text_field($rev['rating']));
                 update_post_meta($review_post_id, 'pbe_source', sanitize_text_field($rev['source']));
+                
+                if ( ! empty($rev['title']) ) {
+                    update_post_meta($review_post_id, 'pbe_review_title', sanitize_text_field($rev['title']));
+                }
                 
                 if ( ! empty($rev['reservation_id']) ) {
                     update_post_meta($review_post_id, 'pbe_platform_res_id', sanitize_text_field($rev['reservation_id']));

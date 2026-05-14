@@ -2720,6 +2720,7 @@
 }
 .pbe-pagination-num:hover:not(.active) { background: #f1f5f9; color: var(--pbe-primary); }
 .pbe-pagination-num.active { background: var(--pbe-button); color: #fff; }
+.pbe-pagination-dots { display: flex; align-items: center; justify-content: center; width: 36px; color: #94a3b8; font-weight: 500; }
 
 .pbe-pagination-btn {
     background: none;

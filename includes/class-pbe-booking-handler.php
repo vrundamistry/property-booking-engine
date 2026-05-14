@@ -22,6 +22,9 @@ class PBE_Booking_Handler {
 
         add_action( 'wp_ajax_pbe_submit_native_booking', array( $this, 'ajax_submit_native_booking' ) );
         add_action( 'wp_ajax_nopriv_pbe_submit_native_booking', array( $this, 'ajax_submit_native_booking' ) );
+
+        add_action( 'wp_ajax_pbe_create_hostfully_lead', array( $this, 'ajax_create_hostfully_lead' ) );
+        add_action( 'wp_ajax_nopriv_pbe_create_hostfully_lead', array( $this, 'ajax_create_hostfully_lead' ) );
     }
 
     /**
@@ -82,6 +85,49 @@ class PBE_Booking_Handler {
         }
 
         wp_send_json_success( $quote );
+    }
+
+    /**
+     * AJAX handler to create a Hostfully Lead for booking redirect
+     */
+    public function ajax_create_hostfully_lead() {
+        $property_id = isset( $_POST['property_id'] ) ? intval( $_POST['property_id'] ) : 0;
+        $checkin     = isset( $_POST['checkin'] ) ? sanitize_text_field( $_POST['checkin'] ) : '';
+        $checkout    = isset( $_POST['checkout'] ) ? sanitize_text_field( $_POST['checkout'] ) : '';
+        $guests      = isset( $_POST['guests'] ) ? intval( $_POST['guests'] ) : 1;
+
+        if ( ! $property_id || ! $checkin || ! $checkout ) {
+            wp_send_json_error( array( 'message' => 'Missing required parameters.' ) );
+        }
+
+        // Localhost bypass to avoid spamming live account with test leads
+        if ( isset($_SERVER['HTTP_HOST']) && ( strpos( $_SERVER['HTTP_HOST'], 'localhost' ) !== false || strpos( $_SERVER['HTTP_HOST'], '127.0.0.1' ) !== false || strpos( $_SERVER['HTTP_HOST'], '.local' ) !== false ) ) {
+            wp_send_json_success( array( 'is_local' => true ) );
+        }
+
+        $platform_source = get_post_meta( $property_id, 'platform_source', true );
+        $platform_id     = get_post_meta( $property_id, 'platform_property_id', true );
+
+        if ( $platform_source !== 'hostfully' ) {
+            wp_send_json_error( array( 'message' => 'Invalid platform source.' ) );
+        }
+
+        $adapter = PBE_Platform_Factory::get_adapter( $platform_source );
+        if ( is_wp_error( $adapter ) ) {
+            wp_send_json_error( array( 'message' => $adapter->get_error_message() ) );
+        }
+
+        if ( ! method_exists( $adapter, 'create_lead' ) ) {
+            wp_send_json_error( array( 'message' => 'Platform does not support lead creation.' ) );
+        }
+
+        $lead_id = $adapter->create_lead( $platform_id, $checkin, $checkout, $guests );
+
+        if ( is_wp_error( $lead_id ) ) {
+            wp_send_json_error( array( 'message' => $lead_id->get_error_message() ) );
+        }
+
+        wp_send_json_success( array( 'lead_id' => $lead_id ) );
     }
 
     /**

@@ -143,7 +143,7 @@ class PBE_Sync_Handler {
 
         // Trigger the Importer logic via batches
         $offset = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
-        $limit  = 10; // 10 properties per batch
+        $limit  = 10; // Reverted to 10 as requested
         
         if (class_exists('PBE_Importer')) {
             $importer = new PBE_Importer();
@@ -174,4 +174,5 @@ class PBE_Sync_Handler {
             wp_send_json_error('Importer class not found.');
         }
     }
+
 }

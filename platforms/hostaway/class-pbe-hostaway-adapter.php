@@ -127,7 +127,7 @@ class PBE_Hostaway_Adapter implements PBE_Platform_Interface {
 
         // Fallback to direct propertyType string if ID lookup failed or ID was missing
         if ( empty($property_type) && ! empty($raw['propertyType']) ) {
-            $property_type = $raw['propertyType'];
+            $property_type = ucwords( strtolower( str_replace( '_', ' ', $raw['propertyType'] ) ) );
         }
 
         if ( empty($property_type) ) {

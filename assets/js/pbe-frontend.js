@@ -206,8 +206,47 @@ jQuery(document).ready(function ($) {
     });
 
     function updatePaginationUI($pagination, current, total) {
-        $pagination.find('.pbe-pagination-num').removeClass('active');
-        $pagination.find(`.pbe-pagination-num[data-page="${current}"]`).addClass('active');
+        const $numsContainer = $pagination.find('.pbe-pagination-numbers');
+        const propertyId = $pagination.find('.pbe-pagination-btn').first().data('property');
+        let html = '';
+
+        if (total <= 7) {
+            for (let p = 1; p <= total; p++) {
+                html += `<button class="pbe-pagination-num ${p === current ? 'active' : ''}" data-page="${p}" data-property="${propertyId}">${p}</button>`;
+            }
+        } else {
+            const adjacents = 1;
+            
+            // Always show page 1
+            html += `<button class="pbe-pagination-num ${current === 1 ? 'active' : ''}" data-page="1" data-property="${propertyId}">1</button>`;
+            
+            if (current > adjacents + 2) {
+                html += '<span class="pbe-pagination-dots">...</span>';
+            }
+            
+            let start = Math.max(2, current - adjacents);
+            let end = Math.min(total - 1, current + adjacents);
+            
+            // Adjust to always show at least 3 middle numbers if possible
+            if (current <= adjacents + 2) end = 4;
+            if (current >= total - adjacents - 1) start = total - 3;
+
+            for (let p = start; p <= end; p++) {
+                if (p > 1 && p < total) {
+                    html += `<button class="pbe-pagination-num ${p === current ? 'active' : ''}" data-page="${p}" data-property="${propertyId}">${p}</button>`;
+                }
+            }
+            
+            if (current < total - adjacents - 1) {
+                html += '<span class="pbe-pagination-dots">...</span>';
+            }
+            
+            // Always show last page
+            html += `<button class="pbe-pagination-num ${current === total ? 'active' : ''}" data-page="${total}" data-property="${propertyId}">${total}</button>`;
+        }
+
+        $numsContainer.html(html);
+
         const $prev = $pagination.find('.pbe-pagination-btn.prev');
         const $next = $pagination.find('.pbe-pagination-btn.next');
         $prev.data('page', current - 1).prop('disabled', current <= 1);
@@ -237,10 +276,15 @@ jQuery(document).ready(function ($) {
         }
 
         const fetchAvailability = () => {
+            const platformSource = $calContainer.data('platform-source') || '';
+            
             if (window.pbeAvailabilityData) {
                 blockedDates = window.pbeAvailabilityData.filter(d => d.status !== 'available').map(d => d.date);
                 window.pbeAvailabilityData.forEach(d => {
-                    restrictions[d.date] = { cta: d.cta == 1, ctd: d.ctd == 1 };
+                    restrictions[d.date] = { 
+                        cta: platformSource === 'hostfully' ? false : (d.cta == 1), 
+                        ctd: platformSource === 'hostfully' ? false : (d.ctd == 1) 
+                    };
                 });
                 render();
                 return;
@@ -265,7 +309,10 @@ jQuery(document).ready(function ($) {
                     if (response.success && guestyData && guestyData.days) {
                         blockedDates = guestyData.days.filter(d => d.status !== 'available').map(d => d.date);
                         guestyData.days.forEach(d => {
-                            restrictions[d.date] = { cta: d.cta == 1, ctd: d.ctd == 1 };
+                            restrictions[d.date] = { 
+                                cta: platformSource === 'hostfully' ? false : (d.cta == 1), 
+                                ctd: platformSource === 'hostfully' ? false : (d.ctd == 1) 
+                            };
                         });
                         render();
                     }

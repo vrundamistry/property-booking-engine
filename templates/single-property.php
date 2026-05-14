@@ -476,9 +476,34 @@ while ( have_posts() ) :
                             <button class="pbe-pagination-btn prev" disabled data-page="1" data-property="<?php echo get_the_ID(); ?>">Previous</button>
                             
                             <div class="pbe-pagination-numbers">
-                                <?php for($p=1; $p<=$total_pages; $p++): ?>
-                                    <button class="pbe-pagination-num <?php echo ($p === 1) ? 'active' : ''; ?>" data-page="<?php echo $p; ?>" data-property="<?php echo get_the_ID(); ?>"><?php echo $p; ?></button>
-                                <?php endfor; ?>
+                                <?php 
+                                $current_page = 1;
+                                $adjacents = 1;
+                                $property_id = get_the_ID();
+                                
+                                if ($total_pages <= 7) {
+                                    for ($p = 1; $p <= $total_pages; $p++) {
+                                        echo '<button class="pbe-pagination-num ' . ($p === $current_page ? 'active' : '') . '" data-page="' . $p . '" data-property="' . $property_id . '">' . $p . '</button>';
+                                    }
+                                } else {
+                                    // Always show page 1
+                                    echo '<button class="pbe-pagination-num ' . ($current_page === 1 ? 'active' : '') . '" data-page="1" data-property="' . $property_id . '">1</button>';
+                                    
+                                    // Start dots
+                                    echo '<span class="pbe-pagination-dots" style="display:none;">...</span>';
+                                    
+                                    // Middle pages (Initially just 2 and 3)
+                                    for ($p = 2; $p <= 3; $p++) {
+                                        echo '<button class="pbe-pagination-num" data-page="' . $p . '" data-property="' . $property_id . '">' . $p . '</button>';
+                                    }
+                                    
+                                    // End dots
+                                    echo '<span class="pbe-pagination-dots">...</span>';
+                                    
+                                    // Always show last page
+                                    echo '<button class="pbe-pagination-num" data-page="' . $total_pages . '" data-property="' . $property_id . '">' . $total_pages . '</button>';
+                                }
+                                ?>
                             </div>
 
                             <button class="pbe-pagination-btn next" data-page="2" data-property="<?php echo get_the_ID(); ?>">Next</button>

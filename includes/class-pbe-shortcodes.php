@@ -469,6 +469,8 @@ class PBE_Shortcodes {
             return '';
         }
 
+        $platform_source = get_post_meta( $property_id, 'platform_source', true );
+
         ob_start();
         echo $this->inject_availability_script( $property_id );
         ?>
@@ -490,6 +492,7 @@ class PBE_Shortcodes {
             <div class="pbe-availability-container">
                 <div id="pbe-inline-calendar" 
                      data-property-id="<?php echo esc_attr( $property_id ); ?>"
+                     data-platform-source="<?php echo esc_attr( $platform_source ); ?>"
                      data-rows="<?php echo esc_attr( $atts['rows'] ); ?>"
                      data-cols="<?php echo esc_attr( $atts['cols'] ); ?>"
                      data-total-months="<?php echo esc_attr( $atts['total_months'] ); ?>">

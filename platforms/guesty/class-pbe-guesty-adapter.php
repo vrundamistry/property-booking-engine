@@ -19,7 +19,7 @@ class PBE_Guesty_Adapter implements PBE_Platform_Interface {
         return $this->api->authenticate();
     }
 
-    public function fetch_properties( $limit = 50, $skip = 0 ) {
+    public function fetch_properties($limit = 50, $skip = 0) {
         return $this->api->get_listings( $limit, $skip );
     }
 
@@ -125,7 +125,7 @@ class PBE_Guesty_Adapter implements PBE_Platform_Interface {
         $mapped['bedrooms']         = isset($raw['bedrooms']) ? $raw['bedrooms'] : 1;
         $mapped['bathrooms']        = isset($raw['bathrooms']) ? $raw['bathrooms'] : 1;
         $mapped['max_guests']       = isset($raw['accommodates']) ? $raw['accommodates'] : 1;
-        $mapped['property_type']    = isset($raw['propertyType']) ? $raw['propertyType'] : '';
+        $mapped['property_type']    = isset($raw['propertyType']) ? ucwords( strtolower( str_replace( '_', ' ', $raw['propertyType'] ) ) ) : '';
         
         // Additional Properties
         $mapped['tags'] = array();

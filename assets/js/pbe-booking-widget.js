@@ -505,6 +505,46 @@ jQuery(document).ready(function($) {
             return;
         }
 
+        if (platformSource === 'hostfully') {
+            const $btn = $(this);
+            const originalText = $btn.text();
+            $btn.text('Preparing Booking...').prop('disabled', true);
+
+            $.ajax({
+                url: pbe_ajax.url,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'pbe_create_hostfully_lead',
+                    property_id: propertyId,
+                    checkin: checkin,
+                    checkout: checkout,
+                    guests: guests
+                },
+                success: function(response) {
+                    console.log('Hostfully Lead API Response:', response);
+                    if (response && response.success) {
+                        if (response.data && response.data.is_local) {
+                            console.log('Local bypass: Lead creation skipped. Redirecting to base property page.');
+                            window.location.href = `https://book.hostfully.com/${bookingDomain}/property/${platformId}`;
+                        } else if (response.data && response.data.lead_id) {
+                            window.location.href = `https://book.hostfully.com/${bookingDomain}/payment/overview?l=${response.data.lead_id}`;
+                        }
+                    } else {
+                        const errMsg = (response && response.data && response.data.message) ? response.data.message : 'Unknown error occurred or invalid response.';
+                        alert('Error preparing booking: ' + errMsg);
+                        $btn.text(originalText).prop('disabled', false);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', status, error, xhr.responseText);
+                    alert('An error occurred while preparing the booking.');
+                    $btn.text(originalText).prop('disabled', false);
+                }
+            });
+            return;
+        }
+
         let bookingUrl = '';
         if (platformSource === 'hostaway') {
             // Holiday Future Format: https://{domain}/checkout/{id}?start=YYYY-MM-DD&end=YYYY-MM-DD&numberOfGuests=X

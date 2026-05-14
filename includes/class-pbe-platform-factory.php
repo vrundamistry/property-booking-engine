@@ -52,13 +52,14 @@ class PBE_Platform_Factory {
                 return new PBE_OwnerRez_Adapter( $basic_auth );
 
             case 'hostfully':
-                $api_key = get_option('pbe_hostfully_api_key');
+                $api_key    = get_option('pbe_hostfully_api_key');
+                $agency_uid = get_option('pbe_hostfully_agency_uid');
                 
-                if ( empty( $api_key ) ) {
-                    return new WP_Error( 'missing_credentials', 'Hostfully sync failed: API Key is required in Platform Settings.' );
+                if ( empty( $api_key ) || empty( $agency_uid ) ) {
+                    return new WP_Error( 'missing_credentials', 'Hostfully sync failed: API Key and Agency UID are required in Platform Settings.' );
                 }
                 
-                return new WP_Error( 'not_implemented', 'Hostfully adapter is not fully implemented yet.' );
+                return new PBE_Hostfully_Adapter( $api_key, $agency_uid );
 
             default:
                 return new WP_Error( 'invalid_platform', 'Invalid or unsupported platform selected.' );

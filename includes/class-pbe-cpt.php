@@ -578,12 +578,13 @@ class PBE_CPT {
     }
 
     public function render_location_meta_box( $post ) {
-        $address = get_post_meta( $post->ID, 'full_address', true );
-        $street  = get_post_meta( $post->ID, 'street', true );
-        $city    = get_post_meta( $post->ID, 'city', true );
-        $state   = get_post_meta( $post->ID, 'state', true );
-        $country = get_post_meta( $post->ID, 'country', true );
-        $zip     = get_post_meta( $post->ID, 'zip', true );
+        $address  = get_post_meta( $post->ID, 'full_address', true );
+        $street   = get_post_meta( $post->ID, 'street', true );
+        $address2 = get_post_meta( $post->ID, 'address2', true );
+        $city     = get_post_meta( $post->ID, 'city', true );
+        $state    = get_post_meta( $post->ID, 'state', true );
+        $country  = get_post_meta( $post->ID, 'country', true );
+        $zip      = get_post_meta( $post->ID, 'zip', true );
         $lat     = get_post_meta( $post->ID, 'latitude', true );
         $lng     = get_post_meta( $post->ID, 'longitude', true );
         ?>
@@ -598,6 +599,7 @@ class PBE_CPT {
         </div>
         <div class="pbe-meta-grid">
             <div class="pbe-meta-field"><label>Street</label><input type="text" name="pbe_street" value="<?php echo esc_attr($street); ?>"></div>
+            <div class="pbe-meta-field"><label>Address 2</label><input type="text" name="pbe_address2" value="<?php echo esc_attr($address2); ?>"></div>
             <div class="pbe-meta-field"><label>City</label><input type="text" name="pbe_city" value="<?php echo esc_attr($city); ?>"></div>
             <div class="pbe-meta-field"><label>State</label><input type="text" name="pbe_state" value="<?php echo esc_attr($state); ?>"></div>
             <div class="pbe-meta-field"><label>Zip</label><input type="text" name="pbe_zip" value="<?php echo esc_attr($zip); ?>"></div>
@@ -853,6 +855,7 @@ class PBE_CPT {
     
     public function render_review_meta_box( $post ) {
         $rating = get_post_meta( $post->ID, 'pbe_rating', true );
+        $title  = get_post_meta( $post->ID, 'pbe_review_title', true );
         $source = get_post_meta( $post->ID, 'pbe_source', true );
         $parent = $post->post_parent;
         
@@ -860,6 +863,10 @@ class PBE_CPT {
         $properties = get_posts(array('post_type' => 'property', 'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC'));
         ?>
         <div class="pbe-meta-grid">
+            <div class="pbe-meta-field">
+                <label>Review Title (Synced)</label>
+                <input type="text" name="pbe_review_title" value="<?php echo esc_attr($title); ?>" class="widefat">
+            </div>
             <div class="pbe-meta-field">
                 <label>Rating (1-5)</label>
                 <input type="number" name="pbe_rating" value="<?php echo esc_attr($rating); ?>" min="1" max="10" step="0.1">
@@ -933,6 +940,7 @@ class PBE_CPT {
             update_post_meta( $post_id, 'longitude', sanitize_text_field( $_POST['pbe_longitude'] ) );
         }
         if ( isset( $_POST['pbe_street'] ) ) update_post_meta( $post_id, 'street', sanitize_text_field( $_POST['pbe_street'] ) );
+        if ( isset( $_POST['pbe_address2'] ) ) update_post_meta( $post_id, 'address2', sanitize_text_field( $_POST['pbe_address2'] ) );
         if ( isset( $_POST['pbe_city'] ) ) update_post_meta( $post_id, 'city', sanitize_text_field( $_POST['pbe_city'] ) );
         if ( isset( $_POST['pbe_state'] ) ) update_post_meta( $post_id, 'state', sanitize_text_field( $_POST['pbe_state'] ) );
         if ( isset( $_POST['pbe_country'] ) ) update_post_meta( $post_id, 'country', sanitize_text_field( $_POST['pbe_country'] ) );
@@ -963,6 +971,9 @@ class PBE_CPT {
 
         if ( isset( $_POST['pbe_rating'] ) ) {
             update_post_meta( $post_id, 'pbe_rating', sanitize_text_field( $_POST['pbe_rating'] ) );
+        }
+        if ( isset( $_POST['pbe_review_title'] ) ) {
+            update_post_meta( $post_id, 'pbe_review_title', sanitize_text_field( $_POST['pbe_review_title'] ) );
         }
         if ( isset( $_POST['pbe_source'] ) ) {
             update_post_meta( $post_id, 'pbe_source', sanitize_text_field( $_POST['pbe_source'] ) );

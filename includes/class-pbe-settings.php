@@ -87,6 +87,8 @@ class PBE_Settings {
         
         // Hostfully
         register_setting('pbe_settings_group', 'pbe_hostfully_api_key');
+        register_setting('pbe_settings_group', 'pbe_hostfully_agency_uid');
+        register_setting('pbe_settings_group', 'pbe_hostfully_booking_slug');
         
         // Sync Settings
         register_setting('pbe_settings_group', 'pbe_sync_source');
@@ -207,6 +209,14 @@ class PBE_Settings {
                         <h3>Hostfully Settings</h3>
                         <table class="form-table">
                             <tr><th scope="row">API Key</th><td><input type="text" name="pbe_hostfully_api_key" value="<?php echo esc_attr(get_option('pbe_hostfully_api_key')); ?>" class="regular-text"></td></tr>
+                            <tr><th scope="row">Agency UID</th><td><input type="text" name="pbe_hostfully_agency_uid" value="<?php echo esc_attr(get_option('pbe_hostfully_agency_uid')); ?>" class="regular-text"></td></tr>
+                            <tr>
+                                <th scope="row">Booking Engine Slug</th>
+                                <td>
+                                    <input type="text" name="pbe_hostfully_booking_slug" value="<?php echo esc_attr(get_option('pbe_hostfully_booking_slug')); ?>" class="regular-text" placeholder="pop-rentals-">
+                                    <p class="description">Your Hostfully Direct Booking site slug.</p>
+                                </td>
+                            </tr>
                         </table>
                     </div>
 

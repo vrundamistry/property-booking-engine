@@ -21,6 +21,7 @@ interface PBE_Platform_Interface {
      *
      * @param int $limit Max properties to fetch per request
      * @param int $skip Offset for pagination
+     * @param string $cursor Token for cursor-based pagination
      * @return array array of raw property objects, or an array with 'properties' and 'total' if available
      */
     public function fetch_properties( $limit = 50, $skip = 0 );
