@@ -66,8 +66,9 @@ class PBE_Template_Loader {
      */
     public function enforce_platform_isolation() {
         if ( is_singular( 'property' ) ) {
+            $post_id           = get_queried_object_id();
             $active_platform   = get_option( 'pbe_active_platform', 'guesty' );
-            $property_platform = get_post_meta( get_the_ID(), 'platform_source', true );
+            $property_platform = get_post_meta( $post_id, 'platform_source', true );
 
             // If the property has a source platform and it's not the active one, redirect.
             if ( $property_platform && $property_platform !== $active_platform ) {
