@@ -18,6 +18,12 @@ class PBE_Settings {
         
         // Handle schedule change
         add_action('update_option_pbe_auto_sync_schedule', array($this, 'update_sync_schedule'), 10, 3);
+
+        // Trigger background sync when platform is switched
+        add_action('update_option_pbe_active_platform', array($this, 'trigger_background_sync_on_switch'), 10, 3);
+        
+        // Admin notice for background sync
+        add_action('admin_notices', array($this, 'display_bg_sync_notice'));
     }
 
     public function update_sync_schedule($old_value, $value, $option) {
@@ -31,6 +37,68 @@ class PBE_Settings {
         }
     }
 
+    /**
+     * Trigger a background sync and clear cache when the platform is switched
+     */
+    public function trigger_background_sync_on_switch($old_value, $value, $option) {
+        if ($old_value !== $value) {
+            
+            // 1. Synchronously sync Global Amenity Groups for the new platform
+            if ( class_exists('PBE_Platform_Factory') ) {
+                $adapter = PBE_Platform_Factory::get_adapter( $value );
+                if ( ! is_wp_error( $adapter ) && method_exists( $adapter, 'sync_amenity_groups' ) ) {
+                    $auth = $adapter->authenticate();
+                    if ( ! is_wp_error( $auth ) && $auth ) {
+                        // Fetch and map the global amenities instantly
+                        $adapter->sync_amenity_groups();
+                    }
+                } else {
+                    // Option 1: If the new platform doesn't support amenity groups, reset all parents to 0
+                    global $wpdb;
+                    $wpdb->query("
+                        UPDATE {$wpdb->term_taxonomy} 
+                        SET parent = 0 
+                        WHERE taxonomy = 'amenity'
+                    ");
+                }
+            }
+
+            // 2. Reset sync settings to "All Properties" to prevent zero-property syncs on the new platform
+            update_option('pbe_sync_source', 'all');
+            if ( isset( $_POST['pbe_sync_source'] ) ) {
+                $_POST['pbe_sync_source'] = 'all';
+            }
+            update_option('pbe_sync_property_ids', '');
+            if ( isset( $_POST['pbe_sync_property_ids'] ) ) {
+                $_POST['pbe_sync_property_ids'] = '';
+            }
+
+            // 3. Clear any stuck background sync jobs for the old platform and forcefully schedule a new one
+            wp_clear_scheduled_hook('pbe_auto_property_import');
+            wp_schedule_single_event(time(), 'pbe_auto_property_import', array(0));
+            
+            // 3. Clear taxonomy caches to prevent old data from rendering before sync finishes
+            clean_taxonomy_cache('amenity');
+            clean_taxonomy_cache('property_tag');
+            
+            // 4. Set transient to show admin notice after page reload
+            set_transient('pbe_bg_sync_notice', true, 60);
+        }
+    }
+
+    /**
+     * Display the background sync admin notice
+     */
+    public function display_bg_sync_notice() {
+        if (get_transient('pbe_bg_sync_notice')) {
+            ?>
+            <div class="notice notice-info is-dismissible">
+                <p><strong>Platform Switched:</strong> A background synchronization has been automatically scheduled to fetch properties and amenities from the new platform. This may take a few minutes to complete.</p>
+            </div>
+            <?php
+            delete_transient('pbe_bg_sync_notice');
+        }
+    }
 
     public function enqueue_admin_scripts($hook) {
         if ($hook !== 'toplevel_page_pbe-platform-settings') {

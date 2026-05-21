@@ -21,24 +21,23 @@ class PBE_Importer {
      * 
      * @return true|WP_Error Returns true on success, or a WP_Error on failure.
      */
-    public function run_daily_import() {
-        $limit = 50;
-        $skip = 0;
+    public function run_daily_import( $skip = 0 ) {
+        $limit = 10; // Reduce batch size to 10 to completely eliminate PHP timeouts on WAMP
         
-        while ( true ) {
-            $result = $this->run_batch_import( $limit, $skip );
-            if ( is_wp_error( $result ) ) {
-                return $result;
-            }
-            if ( $result['count'] < $limit ) {
-                break; // done
-            }
-            $skip += $limit;
+        $result = $this->run_batch_import( $limit, $skip );
+        if ( is_wp_error( $result ) ) {
+            return $result;
         }
         
-        // Save the last successful sync completion time for the active platform
-        $platform_id = get_option('pbe_active_platform', 'guesty');
-        update_option('pbe_last_property_sync_' . $platform_id, time());
+        if ( $result['count'] == $limit ) {
+            // There are likely more properties. Chain the next batch into the cron queue immediately!
+            $next_skip = $skip + $limit;
+            wp_schedule_single_event( time(), 'pbe_auto_property_import', array( $next_skip ) );
+        } else {
+            // Done! Save the last successful sync completion time for the active platform
+            $platform_id = get_option('pbe_active_platform', 'guesty');
+            update_option('pbe_last_property_sync_' . $platform_id, time());
+        }
         
         return true;
     }

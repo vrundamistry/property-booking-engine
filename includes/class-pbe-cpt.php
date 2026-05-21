@@ -45,8 +45,11 @@ class PBE_CPT {
         // Custom search filter for title-only matching
         add_filter( 'posts_search', array( $this, 'search_by_title_only' ), 10, 2 );
 
-        // Filter admin data by active platform
-        add_action( 'pre_get_posts', array( $this, 'filter_admin_data_by_platform' ) );
+        // Filter data by active platform (Global)
+        add_action( 'pre_get_posts', array( $this, 'filter_data_by_platform' ) );
+
+        // Admin display polish for hierarchical amenities
+        add_action( 'admin_head-edit-tags.php', array( $this, 'hide_parent_amenity_counts' ) );
     }
 
     /**
@@ -985,30 +988,51 @@ class PBE_CPT {
     }
 
     /**
-     * Filter the Admin lists to only show data from the active platform
+     * Filter data (Admin & Frontend) to only show data from the active platform
      */
-    public function filter_admin_data_by_platform( $query ) {
-        if ( ! is_admin() || ! $query->is_main_query() ) {
+    public function filter_data_by_platform( $query ) {
+        if ( ! $query->is_main_query() ) {
             return;
         }
 
-        $screen = get_current_screen();
-        if ( ! $screen || $screen->base !== 'edit' ) {
-            return;
-        }
-
-        $allowed_types = array( 'property', 'pbe_review', 'pbe_reservation' );
-        if ( ! in_array( $screen->post_type, $allowed_types ) ) {
+        // Allow singular property requests to pass through so the Template Loader can handle redirects
+        if ( ! is_admin() && ( $query->is_singular( 'property' ) || ( $query->get( 'post_type' ) === 'property' && $query->get( 'name' ) ) ) ) {
             return;
         }
 
         $active_platform = get_option( 'pbe_active_platform', 'guesty' );
+        $post_type = $query->get( 'post_type' );
+
+        // In Admin, we use get_current_screen()
+        if ( is_admin() ) {
+            $screen = get_current_screen();
+            if ( ! $screen || $screen->base !== 'edit' ) {
+                return;
+            }
+            $post_type = $screen->post_type;
+        }
+
+        $allowed_types = array( 'property', 'pbe_review', 'pbe_reservation' );
+        
+        // Ensure we are filtering one of our allowed types
+        $match = false;
+        if ( is_array( $post_type ) ) {
+            $intersect = array_intersect( $post_type, $allowed_types );
+            $match = ! empty( $intersect );
+        } else {
+            $match = in_array( $post_type, $allowed_types );
+        }
+
+        if ( ! $match ) {
+            return;
+        }
 
         $meta_query = $query->get( 'meta_query' ) ?: array();
         
         // Meta key mapping
-        $key = ( $screen->post_type === 'pbe_reservation' ) ? 'pbe_platform' : 'platform_source';
-        if ( $screen->post_type === 'pbe_review' ) $key = 'pbe_platform_source';
+        $current_type = is_array( $post_type ) ? reset( $post_type ) : $post_type;
+        $key = ( $current_type === 'pbe_reservation' ) ? 'pbe_platform' : 'platform_source';
+        if ( $current_type === 'pbe_review' ) $key = 'pbe_platform_source';
 
         $meta_query[] = array(
             'key'     => $key,
@@ -1084,35 +1108,80 @@ class PBE_CPT {
      * Filter terms (Amenities/Tags) by the active platform
      */
     public function filter_terms_by_active_platform( $terms, $taxonomies, $args, $term_query ) {
-        if ( ! is_admin() ) return $terms;
-        
-        $screen = get_current_screen();
-        if ( ! $screen || $screen->base !== 'edit-tags' ) return $terms;
-        
         $active_taxonomies = array( 'amenity', 'property_tag' );
         $intersect = array_intersect( $taxonomies, $active_taxonomies );
-        if ( empty( $intersect ) ) return $terms;
+        if ( empty( $intersect ) || empty( $terms ) ) return $terms;
 
         $active_platform = get_option( 'pbe_active_platform', 'guesty' );
+        $hide_empty_admin_terms = is_admin() && $this->is_taxonomy_list_screen();
         
-        foreach ( $terms as $term ) {
-            if ( ! is_object( $term ) ) continue;
-            // Recalculate count for the column display
-            $term->count = $this->get_active_platform_term_count( $term->term_id, $term->taxonomy, $active_platform );
+        static $platform_term_counts = array();
+        
+        // 1. Run the bulk query only once per page load per platform to completely eliminate N+1 DB Queries
+        if ( ! isset( $platform_term_counts[ $active_platform ] ) ) {
+            global $wpdb;
+            $results = $wpdb->get_results( $wpdb->prepare( "
+                SELECT tt.term_id, COUNT(DISTINCT p.ID) as property_count
+                FROM {$wpdb->posts} p
+                INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
+                INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+                INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+                WHERE tt.taxonomy IN ('amenity', 'property_tag')
+                AND pm.meta_key = 'platform_source'
+                AND pm.meta_value = %s
+                AND p.post_status = 'publish'
+                AND p.post_type = 'property'
+                GROUP BY tt.term_id
+            ", $active_platform ) );
+            
+            $counts = array();
+            if ( $results ) {
+                foreach ( $results as $row ) {
+                    $counts[ $row->term_id ] = (int) $row->property_count;
+                }
+            }
+            $platform_term_counts[ $active_platform ] = $counts;
         }
 
-        return $terms;
+        $base_counts = $platform_term_counts[ $active_platform ];
+        $filtered_terms = array();
+        
+        foreach ( $terms as $term ) {
+            if ( ! is_object( $term ) ) {
+                $filtered_terms[] = $term;
+                continue;
+            }
+
+            // 2. Add up counts instantaneously in PHP memory (including children terms)
+            $term_ids = array( (int) $term->term_id );
+            $children = get_term_children( $term->term_id, $term->taxonomy );
+            if ( ! is_wp_error( $children ) && ! empty( $children ) ) {
+                $term_ids = array_merge( $term_ids, array_map( 'intval', $children ) );
+            }
+            
+            $total_count = 0;
+            foreach ( array_unique( array_filter( $term_ids ) ) as $id ) {
+                if ( isset( $base_counts[ $id ] ) ) {
+                    $total_count += $base_counts[ $id ];
+                }
+            }
+
+            $term->count = $total_count;
+
+            if ( $hide_empty_admin_terms && $term->count < 1 ) {
+                continue;
+            }
+
+            $filtered_terms[] = $term;
+        }
+
+        return $hide_empty_admin_terms ? array_values( $filtered_terms ) : $terms;
     }
 
     /**
      * Filter the underlying SQL query for terms to fix pagination counts
      */
     public function filter_terms_query_by_platform( $clauses, $taxonomies, $args ) {
-        if ( ! is_admin() ) return $clauses;
-
-        $screen = get_current_screen();
-        if ( ! $screen || $screen->base !== 'edit-tags' ) return $clauses;
-
         $active_taxonomies = array( 'amenity', 'property_tag' );
         $intersect = array_intersect( (array)$taxonomies, $active_taxonomies );
         if ( empty( $intersect ) ) return $clauses;
@@ -1135,18 +1204,87 @@ class PBE_CPT {
     private function get_active_platform_term_count( $term_id, $taxonomy, $platform ) {
         global $wpdb;
 
+        $term_ids = array( (int) $term_id );
+        $children = get_term_children( $term_id, $taxonomy );
+        if ( ! is_wp_error( $children ) && ! empty( $children ) ) {
+            $term_ids = array_merge( $term_ids, array_map( 'intval', $children ) );
+        }
+
+        $term_ids = array_unique( array_filter( $term_ids ) );
+        $placeholders = implode( ',', array_fill( 0, count( $term_ids ), '%d' ) );
+
         $count = $wpdb->get_var( $wpdb->prepare( "
-            SELECT COUNT(p.ID) 
+            SELECT COUNT(DISTINCT p.ID) 
             FROM {$wpdb->posts} p
             INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
             INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-            WHERE tr.term_taxonomy_id = (SELECT term_taxonomy_id FROM {$wpdb->term_taxonomy} WHERE term_id = %d AND taxonomy = %s LIMIT 1)
+            INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+            WHERE tt.term_id IN ($placeholders)
+            AND tt.taxonomy = %s
             AND pm.meta_key = 'platform_source'
             AND pm.meta_value = %s
             AND p.post_status = 'publish'
             AND p.post_type = 'property'
-        ", $term_id, $taxonomy, $platform ) );
+        ", array_merge( $term_ids, array( $taxonomy, $platform ) ) ) );
 
         return (int) $count;
+    }
+
+    /**
+     * Checks whether the current admin request is the taxonomy list table.
+     */
+    private function is_taxonomy_list_screen() {
+        global $pagenow;
+
+        if ( $pagenow !== 'edit-tags.php' ) {
+            return false;
+        }
+
+        $taxonomy = isset( $_GET['taxonomy'] ) ? sanitize_key( $_GET['taxonomy'] ) : '';
+        $post_type = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+
+        return in_array( $taxonomy, array( 'amenity', 'property_tag' ), true ) && $post_type === 'property';
+    }
+
+    /**
+     * Hide parent amenity group counts in the admin list to avoid confusing group totals.
+     */
+    public function hide_parent_amenity_counts() {
+        if ( ! $this->is_taxonomy_list_screen() || ( isset( $_GET['taxonomy'] ) && sanitize_key( $_GET['taxonomy'] ) !== 'amenity' ) ) {
+            return;
+        }
+
+        $parents = get_terms( array(
+            'taxonomy'   => 'amenity',
+            'hide_empty' => false,
+            'parent'     => 0,
+            'fields'     => 'ids',
+        ) );
+
+        if ( empty( $parents ) || is_wp_error( $parents ) ) {
+            return;
+        }
+
+        $selectors = array();
+        foreach ( $parents as $parent_id ) {
+            $children = get_term_children( $parent_id, 'amenity' );
+            if ( ! is_wp_error( $children ) && ! empty( $children ) ) {
+                $selectors[] = '#tag-' . intval( $parent_id ) . ' .column-posts';
+            }
+        }
+
+        if ( empty( $selectors ) ) {
+            return;
+        }
+        ?>
+        <style>
+            <?php echo esc_html( implode( ',', $selectors ) ); ?> {
+                color: transparent;
+            }
+            <?php echo esc_html( implode( ' a,', $selectors ) ); ?> a {
+                visibility: hidden;
+            }
+        </style>
+        <?php
     }
 }
