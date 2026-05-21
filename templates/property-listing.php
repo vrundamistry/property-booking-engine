@@ -534,7 +534,18 @@ window.pbeMapData = <?php echo wp_json_encode( $map_data ); ?>;
                             <div class="pbe-custom-option selected" data-value="">Any Type</div>
                             <?php
                             global $wpdb;
-                            $types = $wpdb->get_col( "SELECT DISTINCT meta_value FROM {$wpdb->postmeta} WHERE meta_key = 'property_type' AND meta_value != '' ORDER BY meta_value ASC" );
+                            $active_platform = get_option('pbe_active_platform', 'guesty');
+                            $types = $wpdb->get_col( $wpdb->prepare( "
+                                SELECT DISTINCT pm1.meta_value 
+                                FROM {$wpdb->postmeta} pm1
+                                INNER JOIN {$wpdb->postmeta} pm2 ON pm1.post_id = pm2.post_id
+                                WHERE pm1.meta_key = 'property_type' 
+                                AND pm1.meta_value != '' 
+                                AND pm2.meta_key = 'platform_source'
+                                AND pm2.meta_value = %s
+                                ORDER BY pm1.meta_value ASC", 
+                                $active_platform 
+                            ) );
                             foreach ( $types as $pt ) {
                                 $is_selected = ( isset( $_GET['pbe_prop_type'] ) && $_GET['pbe_prop_type'] === $pt ) ? 'selected' : '';
                                 echo '<div class="pbe-custom-option ' . $is_selected . '" data-value="' . esc_attr( $pt ) . '">' . esc_html( ucfirst( $pt ) ) . '</div>';
