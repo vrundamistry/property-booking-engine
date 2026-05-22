@@ -203,9 +203,19 @@ class PBE_Booking_Handler {
             wp_send_json_error( array( 'message' => $adapter->get_error_message() ) );
         }
         
+        // --- CONCURRENCY LOCK START ---
+        $lock_key = 'pbe_lock_' . md5( $platform_id . $checkin . $checkout );
+        if ( get_transient( $lock_key ) ) {
+            wp_send_json_error( array( 'message' => 'This property is currently being booked for these dates. Please wait a moment and try again.' ) );
+        }
+        // Set lock for 3 minutes (180 seconds)
+        set_transient( $lock_key, 'locked', 180 );
+        // --- CONCURRENCY LOCK END ---
+
         $quote = $adapter->fetch_quote( $platform_id, $checkin, $checkout, $guests, true ); // force_refresh = true
         
         if ( is_wp_error($quote) ) {
+            delete_transient( $lock_key );
             wp_send_json_error( array( 'message' => 'Final availability check failed: ' . $quote->get_error_message() ) );
         }
 
@@ -248,6 +258,7 @@ class PBE_Booking_Handler {
         );
 
         if ( is_wp_error($stripe_result) ) {
+            delete_transient( $lock_key );
             update_post_meta( $local_res_id, 'pbe_status', 'payment_failed' );
             update_post_meta( $local_res_id, 'pbe_error', $stripe_result->get_error_message() );
             wp_send_json_error( array( 'message' => 'Payment failed: ' . $stripe_result->get_error_message() ) );
@@ -261,16 +272,20 @@ class PBE_Booking_Handler {
         $response = $adapter->create_reservation( $platform_id, $checkin, $checkout, $guests, $guest_data, $quote );
 
         if ( is_wp_error( $response ) ) {
-            // Guesty Failed! We must REFUND the payment as requested.
-            $this->refund_stripe_payment( $stripe_result['id'], 'fraudulent' ); 
+            // PMS Failed! We must CANCEL the Stripe authorization hold instantly.
+            $this->cancel_stripe_payment( $stripe_result['id'] ); 
+            delete_transient( $lock_key );
 
             // Update local record as failed
             update_post_meta( $local_res_id, 'pbe_status', 'failed' );
-            update_post_meta( $local_res_id, 'pbe_error', 'Guesty Error: ' . $response->get_error_message() . '. Your payment has been automatically refunded.' );
-            wp_send_json_error( array( 'message' => 'Booking failed in Guesty: ' . $response->get_error_message() . '. Your payment has been refunded.' ) );
+            update_post_meta( $local_res_id, 'pbe_error', 'PMS Error: ' . $response->get_error_message() . '. Your payment authorization has been released.' );
+            wp_send_json_error( array( 'message' => 'Booking failed in PMS: ' . $response->get_error_message() . '. No charges were made to your card.' ) );
         }
 
-        // 7. Success! Update local status and store platform ID
+        // 7. Success! Capture the Stripe authorization now that PMS is confirmed
+        $this->capture_stripe_payment( $stripe_result['id'] );
+        delete_transient( $lock_key ); // Clean up lock
+
         $platform_res_id = isset( $response['id'] ) ? $response['id'] : (isset($response['_id']) ? $response['_id'] : 'CONFIRMED');
         update_post_meta( $local_res_id, 'pbe_platform_res_id', $platform_res_id );
         update_post_meta( $local_res_id, 'pbe_status', 'confirmed' ); // Mark as confirmed since payment was processed.
@@ -312,6 +327,7 @@ class PBE_Booking_Handler {
             'currency'                  => strtolower($currency),
             'payment_method'            => $payment_method_id,
             'confirm'                   => 'true',
+            'capture_method'            => 'manual',
             'receipt_email'             => $guest_email,
             'description'               => $description,
             'automatic_payment_methods[enabled]'         => 'true',
@@ -337,7 +353,7 @@ class PBE_Booking_Handler {
             return new WP_Error('stripe_api_error', $body['error']['message']);
         }
 
-        if ( $body['status'] === 'succeeded' ) {
+        if ( $body['status'] === 'requires_capture' ) {
             return array(
                 'id'          => $body['id'],
                 'receipt_url' => isset($body['charges']['data'][0]['receipt_url']) ? $body['charges']['data'][0]['receipt_url'] : ''
@@ -348,22 +364,35 @@ class PBE_Booking_Handler {
     }
 
     /**
-     * Helper to refund a Stripe payment
+     * Helper to capture an authorized Stripe payment
      */
-    private function refund_stripe_payment( $payment_intent_id, $reason = 'requested_by_customer' ) {
+    private function capture_stripe_payment( $payment_intent_id ) {
         $mode = get_option('pbe_stripe_mode', 'test');
         $secret_key = ($mode === 'live') ? get_option('pbe_stripe_live_sec') : get_option('pbe_stripe_test_sec');
 
         if ( empty($secret_key) ) return false;
 
-        wp_remote_post( 'https://api.stripe.com/v1/refunds', array(
+        wp_remote_post( 'https://api.stripe.com/v1/payment_intents/' . $payment_intent_id . '/capture', array(
             'headers' => array(
                 'Authorization' => 'Bearer ' . $secret_key,
                 'Content-Type'  => 'application/x-www-form-urlencoded'
-            ),
-            'body' => array(
-                'payment_intent' => $payment_intent_id,
-                'reason'         => $reason
+            )
+        ) );
+    }
+
+    /**
+     * Helper to cancel an authorized Stripe payment
+     */
+    private function cancel_stripe_payment( $payment_intent_id ) {
+        $mode = get_option('pbe_stripe_mode', 'test');
+        $secret_key = ($mode === 'live') ? get_option('pbe_stripe_live_sec') : get_option('pbe_stripe_test_sec');
+
+        if ( empty($secret_key) ) return false;
+
+        wp_remote_post( 'https://api.stripe.com/v1/payment_intents/' . $payment_intent_id . '/cancel', array(
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $secret_key,
+                'Content-Type'  => 'application/x-www-form-urlencoded'
             )
         ) );
     }
