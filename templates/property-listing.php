@@ -142,6 +142,11 @@ if ( $show_map ) {
     $pbe_map_query = new WP_Query( $map_query_args );
 
     if ( ! empty( $pbe_map_query->posts ) ) {
+        // FAST SCALABILITY FIX: Bulk pre-load all meta and post objects into memory.
+        // This reduces 4,500+ individual SQL queries down to exactly 2 queries!
+        update_meta_cache( 'post', $pbe_map_query->posts );
+        _prime_post_caches( $pbe_map_query->posts, false, false );
+
         foreach ( $pbe_map_query->posts as $map_pid ) {
             $lat = get_post_meta( $map_pid, 'latitude', true );
             $lng = get_post_meta( $map_pid, 'longitude', true );
