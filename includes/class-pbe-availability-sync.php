@@ -132,8 +132,18 @@ class PBE_Availability_Sync {
         }
 
         if ( ! empty($days) ) {
+            $bulk_values = array();
             foreach ( $days as $day ) {
                 $status = isset($day['status']) ? strtolower($day['status']) : 'available';
+                $min_nights = isset($day['minNights']) ? intval($day['minNights']) : 1;
+                $cta = !empty($day['cta']) ? 1 : 0;
+                $ctd = !empty($day['ctd']) ? 1 : 0;
+
+                // SMART SPARSE STORAGE: Skip completely standard days to prevent DB bloat
+                if ( $status === 'available' && $min_nights <= 1 && $cta === 0 && $ctd === 0 ) {
+                    continue;
+                }
+
                 $guests = 1; // Default fallback
 
                 // Check if there is an attached reservation and pull its guestsCount
@@ -143,20 +153,18 @@ class PBE_Availability_Sync {
                     $guests = intval( $day['blockRefs'][0]['reservation']['guestsCount'] );
                 }
 
-                // Dense Storage: Complete 365-day tracking for precision minNights filtering
-                $wpdb->insert(
-                    $table_name,
-                    array(
-                        'platform_property_id' => $platform_property_id,
-                        'calendar_date'        => isset($day['date']) ? $day['date'] : '',
-                        'status'               => $status,
-                        'min_nights'           => isset($day['minNights']) ? intval($day['minNights']) : 1,
-                        'guests'               => $guests,
-                        'cta'                  => !empty($day['cta']) ? 1 : 0,
-                        'ctd'                  => !empty($day['ctd']) ? 1 : 0,
-                    ),
-                    array( '%s', '%s', '%s', '%d', '%d', '%d', '%d' )
+                $date = isset($day['date']) ? $day['date'] : '';
+                
+                // Prepare values for bulk insert
+                $bulk_values[] = $wpdb->prepare(
+                    "(%s, %s, %s, %d, %d, %d, %d)",
+                    $platform_property_id, $date, $status, $min_nights, $guests, $cta, $ctd
                 );
+            }
+
+            if ( ! empty( $bulk_values ) ) {
+                $query = "INSERT INTO $table_name (platform_property_id, calendar_date, status, min_nights, guests, cta, ctd) VALUES " . implode(', ', $bulk_values);
+                $wpdb->query( $query );
             }
         }
 
