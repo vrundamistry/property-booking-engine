@@ -37,6 +37,11 @@ class PBE_Importer {
             // Done! Save the last successful sync completion time for the active platform
             $platform_id = get_option('pbe_active_platform', 'guesty');
             update_option('pbe_last_property_sync_' . $platform_id, time());
+            
+            // Cleanup deleted properties only if a full sync just completed
+            if ( get_option('pbe_sync_source', 'all') === 'all' ) {
+                $this->cleanup_deleted_properties( $platform_id );
+            }
         }
         
         return true;
@@ -99,6 +104,9 @@ class PBE_Importer {
                         // Actually, fetch_single_property returns already MAPPED data.
                         // To keep the loop clean, we'll store mapped properties differently or just insert them.
                         $raw_properties[] = array( '_pre_mapped' => $prop_data ); 
+                    } else {
+                        // Not found or error on this specific ID! Draft it instantly.
+                        $this->draft_specific_property( $id, $platform_id );
                     }
                 }
             } else {
@@ -471,6 +479,52 @@ class PBE_Importer {
             }
         }
         return false;
+    }
+
+    /**
+     * Soft deletes (drafts) a specific property if it was deleted on the PMS.
+     */
+    private function draft_specific_property( $platform_property_id, $platform_source ) {
+        $post_id = $this->find_existing_property( $platform_property_id, $platform_source );
+        if ( $post_id ) {
+            wp_update_post( array(
+                'ID'          => $post_id,
+                'post_status' => 'draft'
+            ) );
+        }
+    }
+
+    /**
+     * Soft deletes (drafts) all properties that were not updated during the last full sync.
+     */
+    private function cleanup_deleted_properties( $platform_id ) {
+        global $wpdb;
+        
+        // Find properties older than 12 hours (43200 seconds) to be safe
+        $cutoff_time = time() - 43200;
+        
+        $query = $wpdb->prepare("
+            SELECT p.ID FROM {$wpdb->posts} p
+            INNER JOIN {$wpdb->postmeta} pm_source ON p.ID = pm_source.post_id
+            INNER JOIN {$wpdb->postmeta} pm_time ON p.ID = pm_time.post_id
+            WHERE p.post_type = 'property' 
+            AND p.post_status = 'publish'
+            AND pm_source.meta_key = 'platform_source' 
+            AND pm_source.meta_value = %s
+            AND pm_time.meta_key = '_pbe_last_sync_time' 
+            AND CAST(pm_time.meta_value AS UNSIGNED) < %d
+        ", $platform_id, $cutoff_time);
+        
+        $abandoned_posts = $wpdb->get_col($query);
+        
+        if ( !empty($abandoned_posts) ) {
+            foreach ( $abandoned_posts as $post_id ) {
+                wp_update_post( array(
+                    'ID'          => $post_id,
+                    'post_status' => 'draft'
+                ) );
+            }
+        }
     }
 }
 
