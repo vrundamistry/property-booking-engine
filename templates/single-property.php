@@ -62,10 +62,8 @@ while ( have_posts() ) :
     // Flag for real image availability
     $has_real_imgs = ! empty( $gallery );
 
-    // Filter out common Guesty placeholders from gallery
-    $gallery = array_filter( (array) $gallery, function($url) {
-        return ( strpos($url, 'njmfgob91z7fiilhslkz.jpg') === false && ! empty( $url ) );
-    });
+    // Filter out common placeholders from gallery using global helper
+    $gallery = array_filter( (array) $gallery, 'pbe_is_valid_image_url' );
 
     // Re-check after filtering
     $has_real_imgs = ! empty( $gallery );

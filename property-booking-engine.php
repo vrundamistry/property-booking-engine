@@ -148,3 +148,22 @@ function pbe_deactivate() {
     flush_rewrite_rules();
 }
 register_deactivation_hook( __FILE__, 'pbe_deactivate' );
+
+/**
+ * Validates if an image URL is a known placeholder
+ */
+function pbe_is_valid_image_url( $url ) {
+    if ( empty( $url ) ) return false;
+    
+    $placeholders = apply_filters( 'pbe_placeholder_images', array(
+        'njmfgob91z7fiilhslkz.jpg', // Guesty Default
+        'placeholder.jpg',
+        'no-image'
+    ) );
+    
+    foreach ( $placeholders as $placeholder ) {
+        if ( strpos( $url, $placeholder ) !== false ) return false;
+    }
+    
+    return true;
+}

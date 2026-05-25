@@ -297,13 +297,11 @@ if ( $show_map ) {
                                 $gallery_json = get_post_meta( $pid, 'property_gallery_urls', true );
                                 $gallery      = ! empty( $gallery_json ) ? json_decode( $gallery_json, true ) : array();
 
-                                // Filter out common Guesty placeholders
-                                $gallery = array_filter( (array) $gallery, function($url) {
-                                    return ( strpos($url, 'njmfgob91z7fiilhslkz.jpg') === false && ! empty( $url ) );
-                                });
+                                // Filter out common placeholders using global helper
+                                $gallery = array_filter( (array) $gallery, 'pbe_is_valid_image_url' );
 
                                 // Check featured image as well
-                                if ( strpos($img_url, 'njmfgob91z7fiilhslkz.jpg') !== false ) {
+                                if ( ! pbe_is_valid_image_url( $img_url ) ) {
                                     $img_url = '';
                                 }
 
