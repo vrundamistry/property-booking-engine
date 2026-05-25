@@ -404,9 +404,13 @@ class PBE_Importer {
             return;
         }
 
+        $synced_ext_ids = array();
+
         foreach ($reviews as $rev) {
             $ext_id = isset($rev['external_id']) ? $rev['external_id'] : '';
             if ( empty($ext_id) ) continue;
+
+            $synced_ext_ids[] = $ext_id;
 
             // Check if already exists
             global $wpdb;
@@ -452,6 +456,32 @@ class PBE_Importer {
                 // Tag review with the same platform source as the parent property
                 $platform_source = get_post_meta($post_id, 'platform_source', true);
                 update_post_meta($review_post_id, 'pbe_platform_source', $platform_source);
+            }
+        }
+
+        // Cleanup: Remove stale synced reviews that are no longer in the PMS payload
+        global $wpdb;
+        $existing_reviews_query = new WP_Query(array(
+            'post_type'      => 'pbe_review',
+            'post_status'    => 'any',
+            'post_parent'    => $post_id,
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'meta_query'     => array(
+                array(
+                    'key'     => 'pbe_review_id',
+                    'compare' => 'EXISTS'
+                )
+            )
+        ));
+
+        if ( ! empty($existing_reviews_query->posts) ) {
+            foreach ($existing_reviews_query->posts as $existing_review_id) {
+                $ext_review_id = get_post_meta($existing_review_id, 'pbe_review_id', true);
+                // If it has an external ID and that ID is not in our recent sync list, it was deleted on PMS.
+                if ( ! empty($ext_review_id) && ! in_array($ext_review_id, $synced_ext_ids) ) {
+                    wp_delete_post($existing_review_id, true);
+                }
             }
         }
     }
