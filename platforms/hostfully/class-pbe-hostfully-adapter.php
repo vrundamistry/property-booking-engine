@@ -360,6 +360,7 @@ class PBE_Hostfully_Adapter implements PBE_Platform_Interface {
                     'minNights'  => isset( $entry['availability']['minimumStayLength'] ) ? intval( $entry['availability']['minimumStayLength'] ) : 1,
                     'cta'        => (isset( $entry['availability']['availableForCheckIn'] ) && $entry['availability']['availableForCheckIn'] === false) ? 1 : 0,
                     'ctd'        => (isset( $entry['availability']['availableForCheckOut'] ) && $entry['availability']['availableForCheckOut'] === false) ? 1 : 0,
+                    'price'      => isset( $entry['pricing']['value'] ) ? floatval( $entry['pricing']['value'] ) : null,
                 );
             }
         }

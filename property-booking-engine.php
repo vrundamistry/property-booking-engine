@@ -114,6 +114,7 @@ function pbe_create_db_tables() {
         guests int(11) DEFAULT 1,
         cta tinyint(1) DEFAULT 0,
         ctd tinyint(1) DEFAULT 0,
+        price decimal(10,2) DEFAULT NULL,
         PRIMARY KEY  (id),
         KEY platform_property_id (platform_property_id),
         KEY calendar_date (calendar_date)
@@ -125,6 +126,7 @@ function pbe_create_db_tables() {
     // Ensure columns exist even if dbDelta skips them (sometimes happens on certain MySQL configs)
     $wpdb->query("ALTER TABLE $table_name ADD COLUMN IF NOT EXISTS cta tinyint(1) DEFAULT 0 AFTER guests");
     $wpdb->query("ALTER TABLE $table_name ADD COLUMN IF NOT EXISTS ctd tinyint(1) DEFAULT 0 AFTER cta");
+    $wpdb->query("ALTER TABLE $table_name ADD COLUMN IF NOT EXISTS price decimal(10,2) DEFAULT NULL AFTER ctd");
 }
 
 add_filter( 'cron_schedules', 'pbe_cron_schedules' );

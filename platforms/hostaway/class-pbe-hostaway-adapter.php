@@ -231,6 +231,7 @@ class PBE_Hostaway_Adapter implements PBE_Platform_Interface {
                 'minNights'  => isset($day['minimumStay']) ? $day['minimumStay'] : 1,
                 'cta'        => isset($day['closedOnArrival']) ? $day['closedOnArrival'] : '',
                 'ctd'        => isset($day['closedOnDeparture']) ? $day['closedOnDeparture'] : '',
+                'price'      => isset($day['price']) ? floatval($day['price']) : null,
             );
         }
 
