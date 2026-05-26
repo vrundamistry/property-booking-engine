@@ -154,16 +154,17 @@ class PBE_Availability_Sync {
                 }
 
                 $date = isset($day['date']) ? $day['date'] : '';
+                $price = isset($day['price']) ? floatval($day['price']) : null;
                 
                 // Prepare values for bulk insert
                 $bulk_values[] = $wpdb->prepare(
-                    "(%s, %s, %s, %d, %d, %d, %d)",
-                    $platform_property_id, $date, $status, $min_nights, $guests, $cta, $ctd
+                    "(%s, %s, %s, %d, %d, %d, %d, %f)",
+                    $platform_property_id, $date, $status, $min_nights, $guests, $cta, $ctd, $price
                 );
             }
 
             if ( ! empty( $bulk_values ) ) {
-                $query = "INSERT INTO $table_name (platform_property_id, calendar_date, status, min_nights, guests, cta, ctd) VALUES " . implode(', ', $bulk_values);
+                $query = "INSERT INTO $table_name (platform_property_id, calendar_date, status, min_nights, guests, cta, ctd, price) VALUES " . implode(', ', $bulk_values);
                 $wpdb->query( $query );
             }
         }
