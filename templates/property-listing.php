@@ -98,27 +98,20 @@ if ( ! empty( $_GET['checkin'] ) && ! empty( $_GET['checkout'] ) ) {
     $checkout_dt = new DateTime($checkout);
     $stay_length = max(1, $checkin_dt->diff($checkout_dt)->days);
 
-    // Find conflicting platform_property_ids based on status OR minNights rules
+    // Find conflicting WordPress Post IDs based on status OR minNights rules
     $table_name = $wpdb->prefix . 'pbe_calendar_dates';
-    $conflicting_platform_ids = $wpdb->get_col( $wpdb->prepare(
-        "SELECT DISTINCT platform_property_id FROM $table_name 
-         WHERE calendar_date >= %s AND calendar_date < %s 
-         AND (status != 'available' OR min_nights > %d)",
+    $unavailable_wp_ids = $wpdb->get_col( $wpdb->prepare(
+        "SELECT DISTINCT pm.post_id 
+         FROM {$wpdb->postmeta} pm
+         INNER JOIN $table_name c ON pm.meta_value = c.platform_property_id
+         WHERE pm.meta_key = 'platform_property_id'
+         AND c.calendar_date >= %s 
+         AND c.calendar_date < %s 
+         AND (c.status != 'available' OR c.min_nights > %d)",
         $checkin,
         $checkout,
         $stay_length
     ) );
-
-    if ( ! empty( $conflicting_platform_ids ) ) {
-        // Prepare list for IN clause
-        $in_placeholders = implode(',', array_fill(0, count($conflicting_platform_ids), '%s'));
-        
-        // Map platform IDs to WordPress Post IDs
-        $unavailable_wp_ids = $wpdb->get_col( $wpdb->prepare(
-            "SELECT DISTINCT post_id FROM {$wpdb->postmeta} WHERE meta_key = 'platform_property_id' AND meta_value IN ($in_placeholders)",
-            ...$conflicting_platform_ids
-        ) );
-    }
 }
 
 $query_args = array_merge( $search_args, array(
