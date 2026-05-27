@@ -19,6 +19,10 @@ class PBE_Availability_Sync {
      * Executes the half_hourly cron sync for availability
      */
     public function run_availability_sync() {
+        if ( get_option('pbe_auto_avail_sync_enabled', 'yes') === 'no' ) {
+            return false;
+        }
+
         if ( function_exists('set_time_limit') ) {
             set_time_limit(0);
         }

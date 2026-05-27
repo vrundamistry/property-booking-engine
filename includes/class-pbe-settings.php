@@ -166,6 +166,7 @@ class PBE_Settings {
         // Calendar Sync Settings
         register_setting('pbe_settings_group', 'pbe_avail_sync_source');
         register_setting('pbe_settings_group', 'pbe_avail_sync_property_ids');
+        register_setting('pbe_settings_group', 'pbe_auto_avail_sync_enabled');
 
         // Testing & Caching
         register_setting('pbe_settings_group', 'pbe_test_mode');
@@ -372,8 +373,23 @@ class PBE_Settings {
 
                     <hr>
 
-                    <h3>Manual Calendar Sync</h3>
+                    <h3>Calendar Sync Settings</h3>
                     <table class="form-table">
+                        <tr>
+                            <th scope="row">Automatic 30-Min Sync</th>
+                            <td>
+                                <select name="pbe_auto_avail_sync_enabled">
+                                    <option value="yes" <?php selected(get_option('pbe_auto_avail_sync_enabled', 'yes'), 'yes'); ?>>Enabled</option>
+                                    <option value="no" <?php selected(get_option('pbe_auto_avail_sync_enabled'), 'no'); ?>>Disabled (Manual Only)</option>
+                                </select>
+                                <p class="description">Disable this if you are hitting API limits or prefer to trigger syncs manually.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="padding-bottom: 20px; font-style: italic; color: #646970;">
+                                <strong>Note:</strong> The manual "Sync Calendars Now" button below works completely independently of this setting. You can always trigger a manual sync even if the automatic cron is disabled.
+                            </td>
+                        </tr>
                         <tr>
                             <th scope="row">Sync Calendars From</th>
                             <td>
