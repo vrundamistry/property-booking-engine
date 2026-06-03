@@ -24,7 +24,6 @@ require_once PBE_PLUGIN_DIR . 'includes/class-pbe-importer.php';
 require_once PBE_PLUGIN_DIR . 'includes/class-pbe-sync-handler.php';
 require_once PBE_PLUGIN_DIR . 'includes/class-pbe-admin-bar.php';
 require_once PBE_PLUGIN_DIR . 'includes/class-pbe-shortcodes.php';
-require_once PBE_PLUGIN_DIR . 'includes/class-pbe-auto-setup.php';
 require_once PBE_PLUGIN_DIR . 'includes/class-pbe-appearance.php';
 require_once PBE_PLUGIN_DIR . 'includes/class-pbe-template-loader.php';
 require_once PBE_PLUGIN_DIR . 'includes/class-pbe-page-meta.php';
@@ -53,7 +52,12 @@ function pbe_init() {
     new PBE_Settings();
     new PBE_Admin_Bar();
     new PBE_Sync_Handler();
-    new PBE_Auto_Setup();
+    
+    if ( is_admin() ) {
+        require_once PBE_PLUGIN_DIR . 'includes/class-pbe-auto-setup.php';
+        new PBE_Auto_Setup();
+    }
+    
     new PBE_Appearance();
     new PBE_Template_Loader();
     new PBE_Page_Meta();
