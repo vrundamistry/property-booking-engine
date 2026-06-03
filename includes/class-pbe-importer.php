@@ -32,7 +32,9 @@ class PBE_Importer {
         if ( $result['count'] == $limit ) {
             // There are likely more properties. Chain the next batch into the cron queue immediately!
             $next_skip = $skip + $limit;
-            wp_schedule_single_event( time(), 'pbe_auto_property_import', array( $next_skip ) );
+            if ( ! wp_next_scheduled( 'pbe_auto_property_import', array( $next_skip ) ) ) {
+                wp_schedule_single_event( time(), 'pbe_auto_property_import', array( $next_skip ) );
+            }
         } else {
             // Done! Save the last successful sync completion time for the active platform
             $platform_id = get_option('pbe_active_platform', 'guesty');
