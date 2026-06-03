@@ -32,7 +32,7 @@ class PBE_Shortcodes {
         $availability_data = $wpdb->get_results( $wpdb->prepare(
             "SELECT calendar_date AS date, status, min_nights, guests, cta, ctd FROM $table_name WHERE platform_property_id = %s AND calendar_date >= %s",
             $platform_id,
-            date('Y-m-d')
+            wp_date('Y-m-d')
         ), ARRAY_A );
 
         return '<script>window.pbeAvailabilityData = ' . wp_json_encode($availability_data) . ';</script>';
