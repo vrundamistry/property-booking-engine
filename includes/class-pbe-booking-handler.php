@@ -63,6 +63,11 @@ class PBE_Booking_Handler {
             wp_send_json_error( array( 'message' => 'Missing required parameters.' ) );
         }
 
+        $max_guests = (int) get_post_meta( $property_id, 'max_guests', true );
+        if ( $max_guests > 0 && $guests > $max_guests ) {
+            wp_send_json_error( array( 'message' => 'Guest count exceeds the maximum allowed for this property.' ) );
+        }
+
         // Get Platform Details from Metadata
         $platform_source = get_post_meta( $property_id, 'platform_source', true );
         $platform_id     = get_post_meta( $property_id, 'platform_property_id', true );
@@ -98,6 +103,11 @@ class PBE_Booking_Handler {
 
         if ( ! $property_id || ! $checkin || ! $checkout ) {
             wp_send_json_error( array( 'message' => 'Missing required parameters.' ) );
+        }
+
+        $max_guests = (int) get_post_meta( $property_id, 'max_guests', true );
+        if ( $max_guests > 0 && $guests > $max_guests ) {
+            wp_send_json_error( array( 'message' => 'Guest count exceeds the maximum allowed for this property.' ) );
         }
 
         // Localhost bypass to avoid spamming live account with test leads
@@ -178,6 +188,11 @@ class PBE_Booking_Handler {
 
         if ( ! $property_id || ! $checkin || ! $checkout || empty($guest_data) ) {
             wp_send_json_error( array( 'message' => 'Missing required parameters.' ) );
+        }
+
+        $max_guests = (int) get_post_meta( $property_id, 'max_guests', true );
+        if ( $max_guests > 0 && $guests > $max_guests ) {
+            wp_send_json_error( array( 'message' => 'Guest count exceeds the maximum allowed for this property.' ) );
         }
 
         // 1. Get Platform Details
