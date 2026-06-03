@@ -121,8 +121,17 @@ $query_args = array_merge( $search_args, array(
     'post_status'    => 'publish',
     'meta_query'     => $meta_query,
     'tax_query'      => $tax_query,
-    'post__not_in'   => $unavailable_wp_ids,
 ) );
+
+// FAST SCALABILITY FIX: Shift exclusion logic from slow MySQL "NOT IN" to lightning fast PHP array_diff
+if ( ! empty( $unavailable_wp_ids ) ) {
+    global $wpdb;
+    $all_active_ids = $wpdb->get_col("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'property' AND post_status = 'publish'");
+    $available_ids = array_diff($all_active_ids, $unavailable_wp_ids);
+    
+    // If array_diff is empty, 0 properties are available. We pass array(0) to force WP_Query to return nothing.
+    $query_args['post__in'] = empty($available_ids) ? array(0) : $available_ids;
+}
 
 $pbe_query = new WP_Query( $query_args );
 

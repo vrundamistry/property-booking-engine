@@ -238,7 +238,7 @@ class PBE_Hostaway_Adapter implements PBE_Platform_Interface {
         return array( 'days' => $days );
     }
 
-    public function fetch_quote($platform_id, $from, $to, $guests, $force_refresh = true) {
+    public function fetch_quote($platform_id, $from, $to, $guests, $force_refresh = false) {
         $cache_key = 'pbe_hostaway_quote_' . $platform_id . '_' . $from . '_' . $to . '_' . $guests;
         $cached    = get_transient($cache_key);
 
