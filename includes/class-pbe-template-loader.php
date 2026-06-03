@@ -76,6 +76,13 @@ class PBE_Template_Loader {
                 wp_safe_redirect( $redirect_url );
                 exit;
             }
+        } elseif ( is_404() ) {
+            global $wp_query;
+            if ( get_query_var( 'post_type' ) === 'property' || isset( $wp_query->query['property'] ) ) {
+                $redirect_url = $this->get_listing_page_url();
+                wp_safe_redirect( $redirect_url );
+                exit;
+            }
         }
     }
 
