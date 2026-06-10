@@ -53,13 +53,15 @@ class PBE_Settings {
                         $adapter->sync_amenity_groups();
                     }
                 } else {
-                    // Option 1: If the new platform doesn't support amenity groups, reset all parents to 0
-                    global $wpdb;
-                    $wpdb->query("
-                        UPDATE {$wpdb->term_taxonomy} 
-                        SET parent = 0 
-                        WHERE taxonomy = 'amenity'
-                    ");
+                    // If the new platform doesn't support amenity groups, reset all parents to 0 (except for Custom platform)
+                    if ( $value !== 'custom' ) {
+                        global $wpdb;
+                        $wpdb->query("
+                            UPDATE {$wpdb->term_taxonomy} 
+                            SET parent = 0 
+                            WHERE taxonomy = 'amenity'
+                        ");
+                    }
                 }
             }
 
@@ -71,6 +73,12 @@ class PBE_Settings {
             update_option('pbe_sync_property_ids', '');
             if ( isset( $_POST['pbe_sync_property_ids'] ) ) {
                 $_POST['pbe_sync_property_ids'] = '';
+            }
+            
+            // Reset default booking widget to Standard (Platform Redirect)
+            update_option('pbe_default_booking_widget', 'standard');
+            if ( isset( $_POST['pbe_default_booking_widget'] ) ) {
+                $_POST['pbe_default_booking_widget'] = 'standard';
             }
 
             // 3. Clear any stuck background sync jobs for the old platform and forcefully schedule a new one
@@ -133,6 +141,9 @@ class PBE_Settings {
     public function register_settings() {
         // Platform Selection
         register_setting('pbe_settings_group', 'pbe_active_platform');
+        
+        // Custom API Settings
+        register_setting('pbe_settings_group', 'pbe_custom_api_secret_key');
         
         // Guesty
         register_setting('pbe_settings_group', 'pbe_guesty_client_id');
@@ -284,6 +295,52 @@ class PBE_Settings {
                                 <td>
                                     <input type="text" name="pbe_hostfully_booking_slug" value="<?php echo esc_attr(get_option('pbe_hostfully_booking_slug')); ?>" class="regular-text" placeholder="pop-rentals-">
                                     <p class="description">Your Hostfully Direct Booking site slug.</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Custom API Fields -->
+                    <div id="pbe_fields_custom" class="pbe-platform-fields" style="display:none;">
+                        <h3>Custom API Settings</h3>
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row">API Secret Key</th>
+                                <td>
+                                    <input type="password" name="pbe_custom_api_secret_key" id="pbe_custom_api_secret_key" value="<?php echo esc_attr(get_option('pbe_custom_api_secret_key', 'my_default_secret_key_123')); ?>" class="regular-text">
+                                    <button type="button" class="button" id="pbe_generate_secret_key" onclick="
+                                        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+                                        var key = '';
+                                        var crypto = window.crypto || window.msCrypto;
+                                        if (crypto) {
+                                            var values = new Uint32Array(32);
+                                            crypto.getRandomValues(values);
+                                            for (var i = 0; i < values.length; i++) {
+                                                key += chars[values[i] % chars.length];
+                                            }
+                                        } else {
+                                            for (var i = 0; i < 32; i++) {
+                                                key += chars.charAt(Math.floor(Math.random() * chars.length));
+                                            }
+                                        }
+                                        document.getElementById('pbe_custom_api_secret_key').value = key;
+                                        document.getElementById('pbe_custom_api_secret_key').type = 'text';
+                                    ">Generate Key</button>
+                                    <p class="description">This key must be sent as a Bearer token in the <code>Authorization</code> header of webhook requests.</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Properties Webhook URL</th>
+                                <td>
+                                    <code style="background: #f0f0f1; padding: 5px 8px; border-radius: 4px; display: inline-block; word-break: break-all;"><?php echo esc_url( get_rest_url( null, 'pbe/v1/properties' ) ); ?></code>
+                                    <p class="description">Send POST requests here to create or update listings.</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Availability Webhook URL</th>
+                                <td>
+                                    <code style="background: #f0f0f1; padding: 5px 8px; border-radius: 4px; display: inline-block; word-break: break-all;"><?php echo esc_url( get_rest_url( null, 'pbe/v1/availability' ) ); ?></code>
+                                    <p class="description">Send POST requests here to update availability calendars/blockouts.</p>
                                 </td>
                             </tr>
                         </table>
