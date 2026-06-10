@@ -133,18 +133,18 @@ while ( have_posts() ) :
             <div class="swiper-wrapper">
                 <?php foreach ( $gallery as $url ) : ?>
                     <div class="swiper-slide">
-                        <?php if ( $has_real_imgs ) : ?>
+                        <?php if ( $has_real_imgs && count( $gallery ) > 1 ) : ?>
                             <a href="<?php echo esc_url( $url ); ?>" class="pbe-glightbox" data-type="image" data-gallery="property-gallery">
                         <?php endif; ?>
-                            <img src="<?php echo esc_url( $url ); ?>" alt="<?php the_title_attribute(); ?>" class="pbe-main-slide-img" width="800" height="533">
-                        <?php if ( $has_real_imgs ) : ?>
+                            <img src="<?php echo esc_url( $url ); ?>" alt="<?php the_title_attribute(); ?>" class="pbe-main-slide-img" width="800" height="533" onerror="this.onerror=null; this.src='<?php echo esc_url( PBE_PLUGIN_URL . 'assets/images/placeholder.svg' ); ?>';">
+                        <?php if ( $has_real_imgs && count( $gallery ) > 1 ) : ?>
                             </a>
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             </div>
             
-            <?php if ( $has_real_imgs ) : ?>
+            <?php if ( $has_real_imgs && count( $gallery ) > 1 ) : ?>
                 <!-- Navigation Arrows (Standard) -->
                 <div class="swiper-button-next"></div>
                 <div class="swiper-button-prev"></div>
@@ -162,7 +162,7 @@ while ( have_posts() ) :
             </div>
         </div>
 
-        <?php if ( $has_real_imgs ) : ?>
+        <?php if ( $has_real_imgs && count( $gallery ) > 1 ) : ?>
             <!-- Small Professional Thumbnails (Slider) -->
             <div class="pbe-mini-thumbs-wrap">
                 <div class="swiper pbe-thumb-slider">
@@ -170,7 +170,7 @@ while ( have_posts() ) :
                         <?php foreach ( $gallery as $index => $url ) : ?>
                             <div class="swiper-slide">
                                 <div class="pbe-mini-thumb-item <?php echo $index === 0 ? 'active' : ''; ?>" data-index="<?php echo $index; ?>">
-                                    <img src="<?php echo esc_url( $url ); ?>" alt="" width="150" height="100">
+                                    <img src="<?php echo esc_url( $url ); ?>" alt="" width="150" height="100" onerror="this.onerror=null; this.src='<?php echo esc_url( PBE_PLUGIN_URL . 'assets/images/placeholder.svg' ); ?>';">
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -309,7 +309,7 @@ while ( have_posts() ) :
                      ?>
                         <div class="pbe-gallery-grid-item <?php echo $is_last_visible ? 'view-all' : ''; ?>">
                             <a href="<?php echo esc_url( $url ); ?>" class="pbe-glightbox pbe-gallery-grid-link" data-type="image" data-gallery="gallery-grid" data-index="<?php echo $idx - 1; ?>">
-                                <img src="<?php echo esc_url( $url ); ?>" alt="" width="600" height="400">
+                                <img src="<?php echo esc_url( $url ); ?>" alt="" width="600" height="400" onerror="this.onerror=null; this.src='<?php echo esc_url( PBE_PLUGIN_URL . 'assets/images/placeholder.svg' ); ?>';">
                                 <?php if ( $is_last_visible ) : ?>
                                     <div class="pbe-gallery-overlay">
                                         <div class="pbe-gallery-plus-icon">
