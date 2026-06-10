@@ -57,9 +57,11 @@ class PBE_Settings {
                     if ( $value !== 'custom' ) {
                         global $wpdb;
                         $wpdb->query("
-                            UPDATE {$wpdb->term_taxonomy} 
-                            SET parent = 0 
-                            WHERE taxonomy = 'amenity'
+                            UPDATE {$wpdb->term_taxonomy} tt
+                            INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
+                            SET tt.parent = 0
+                            WHERE tt.taxonomy = 'amenity'
+                            AND t.slug NOT LIKE '%-custom'
                         ");
                     }
                 }
@@ -386,109 +388,162 @@ class PBE_Settings {
 
                 <!-- TAB: Sync -->
                 <div id="pbe-tab-sync" class="pbe-tab-content" style="display:none;">
-                    <h3>Property Sync Settings</h3>
-                    <table class="form-table">
-                        <tr>
-                            <th scope="row">Sync Properties From</th>
-                            <td>
-                                <select name="pbe_sync_source">
-                                    <option value="all" <?php selected(get_option('pbe_sync_source'), 'all'); ?>>All Properties</option>
-                                    <option value="selected_ids" <?php selected(get_option('pbe_sync_source'), 'selected_ids'); ?>>Selected Property IDs</option>
-                                </select>
-                            </td>
-                        </tr>
-                        <tr id="pbe_sync_property_ids_wrapper" style="display:none;">
-                            <th scope="row">Specific Property IDs</th>
-                            <td>
-                                <input type="text" name="pbe_sync_property_ids" value="<?php echo esc_attr(get_option('pbe_sync_property_ids')); ?>" class="regular-text">
-                                <p class="description">Enter comma-separated platform IDs (e.g. 5d8e9f2a, 6a1b2c3d)</p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">Auto Sync Schedule</th>
-                            <td>
-                                <select name="pbe_auto_sync_schedule">
-                                    <option value="manual" <?php selected(get_option('pbe_auto_sync_schedule', 'manual'), 'manual'); ?>>Manual</option>
-                                    <option value="hourly" <?php selected(get_option('pbe_auto_sync_schedule'), 'hourly'); ?>>Every Hour</option>
-                                    <option value="twicedaily" <?php selected(get_option('pbe_auto_sync_schedule'), 'twicedaily'); ?>>Twice Daily</option>
-                                    <option value="daily" <?php selected(get_option('pbe_auto_sync_schedule'), 'daily'); ?>>Daily</option>
-                                </select>
-                                <p class="description">Uses WP Cron to schedule imports.</p>
-                            </td>
-                        </tr>
-                    </table>
+                    <?php if ( get_option( 'pbe_active_platform', 'guesty' ) === 'custom' ) : ?>
+                        <!-- Show Webhook Guide & Status Log for Custom API -->
+                        <h3>Custom API Webhook Sync Guide</h3>
+                        <p>The **Custom API** integration is a push-based system. Properties, availability calendars, and reviews must be pushed to this site via incoming HTTP POST webhooks.</p>
+                        
+                        <div class="notice notice-info inline" style="margin: 0 0 20px 0; padding: 15px; border-left-color: #72aee6; background: #fff; border-left-width: 4px; box-shadow: 0 1px 1px 0 rgba(0,0,0,.1); border-radius: 4px;">
+                            <p style="margin: 0 0 10px 0; font-weight: bold; font-size: 15px; color: #1d2327;">Incoming Webhook Endpoints</p>
+                            <p style="margin: 0 0 12px 0; color: #2c3338;">Use the following URLs to configure your outgoing sync tools (e.g. Zapier, Make, or custom cron scripts):</p>
+                            <table class="form-table" style="margin: 0;">
+                                <tr>
+                                    <th scope="row" style="width: 220px; padding: 10px 0; font-weight: 600; font-size: 13px;">Property Sync URL</th>
+                                    <td style="padding: 10px 0;"><code><?php echo esc_url( get_rest_url( null, 'pbe/v1/properties' ) ); ?></code></td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" style="width: 220px; padding: 10px 0; font-weight: 600; font-size: 13px;">Availability Sync URL</th>
+                                    <td style="padding: 10px 0;"><code><?php echo esc_url( get_rest_url( null, 'pbe/v1/availability' ) ); ?></code></td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" style="width: 220px; padding: 10px 0; font-weight: 600; font-size: 13px;">Reviews Sync URL</th>
+                                    <td style="padding: 10px 0;"><code><?php echo esc_url( get_rest_url( null, 'pbe/v1/reviews' ) ); ?></code></td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" style="width: 220px; padding: 10px 0; font-weight: 600; font-size: 13px;">Authorization Header</th>
+                                    <td style="padding: 10px 0;"><code>Authorization: Bearer &lt;your_secret_key&gt;</code></td>
+                                </tr>
+                            </table>
+                            <p style="margin: 15px 0 0 0; font-size: 12px; color: #646970; border-top: 1px solid #dcdcde; padding-top: 10px;">Note: You can view or generate the Secret Key under the <strong>General</strong> platform settings tab.</p>
+                        </div>
 
-                    <hr>
-                    
-                    <h3>Manual Property Sync</h3>
-                    <p>Trigger an immediate property import sync based on the settings above.</p>
-                    <button class="button button-primary" id="pbe_sync_now_btn">Sync Properties Now</button>
-                    <span id="pbe_sync_status" style="margin-left:10px; font-weight:bold;"></span>
-                    <div style="margin-top:10px;">
-                        <?php echo $this->get_last_sync_html('property'); ?>
-                    </div>
+                        <h3>Webhook Activity & Logs</h3>
+                        <p>Track the last successful webhook pushes received by your server:</p>
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row" style="width: 220px;">Last Property Sync</th>
+                                <td>
+                                    <?php echo $this->get_last_sync_html('property'); ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row" style="width: 220px;">Last Calendar Sync</th>
+                                <td>
+                                    <?php echo $this->get_last_sync_html('calendar'); ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row" style="width: 220px;">Last Review Sync</th>
+                                <td>
+                                    <?php echo $this->get_last_sync_html('review'); ?>
+                                </td>
+                            </tr>
+                        </table>
+                    <?php else : ?>
+                        <h3>Property Sync Settings</h3>
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row">Sync Properties From</th>
+                                <td>
+                                    <select name="pbe_sync_source">
+                                        <option value="all" <?php selected(get_option('pbe_sync_source'), 'all'); ?>>All Properties</option>
+                                        <option value="selected_ids" <?php selected(get_option('pbe_sync_source'), 'selected_ids'); ?>>Selected Property IDs</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr id="pbe_sync_property_ids_wrapper" style="display:none;">
+                                <th scope="row">Specific Property IDs</th>
+                                <td>
+                                    <input type="text" name="pbe_sync_property_ids" value="<?php echo esc_attr(get_option('pbe_sync_property_ids')); ?>" class="regular-text">
+                                    <p class="description">Enter comma-separated platform IDs (e.g. 5d8e9f2a, 6a1b2c3d)</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Auto Sync Schedule</th>
+                                <td>
+                                    <select name="pbe_auto_sync_schedule">
+                                        <option value="manual" <?php selected(get_option('pbe_auto_sync_schedule', 'manual'), 'manual'); ?>>Manual</option>
+                                        <option value="hourly" <?php selected(get_option('pbe_auto_sync_schedule'), 'hourly'); ?>>Every Hour</option>
+                                        <option value="twicedaily" <?php selected(get_option('pbe_auto_sync_schedule'), 'twicedaily'); ?>>Twice Daily</option>
+                                        <option value="daily" <?php selected(get_option('pbe_auto_sync_schedule'), 'daily'); ?>>Daily</option>
+                                    </select>
+                                    <p class="description">Uses WP Cron to schedule imports.</p>
+                                </td>
+                            </tr>
+                        </table>
 
-                    <hr>
+                        <hr>
+                        
+                        <h3>Manual Property Sync</h3>
+                        <p>Trigger an immediate property import sync based on the settings above.</p>
+                        <button class="button button-primary" id="pbe_sync_now_btn">Sync Properties Now</button>
+                        <span id="pbe_sync_status" style="margin-left:10px; font-weight:bold;"></span>
+                        <div style="margin-top:10px;">
+                            <?php echo $this->get_last_sync_html('property'); ?>
+                        </div>
 
-                    <h3>Calendar Sync Settings</h3>
-                    <table class="form-table">
-                        <tr>
-                            <th scope="row">Automatic 30-Min Sync</th>
-                            <td>
-                                <select name="pbe_auto_avail_sync_enabled">
-                                    <option value="yes" <?php selected(get_option('pbe_auto_avail_sync_enabled', 'yes'), 'yes'); ?>>Enabled</option>
-                                    <option value="no" <?php selected(get_option('pbe_auto_avail_sync_enabled'), 'no'); ?>>Disabled (Manual Only)</option>
-                                </select>
-                                <p class="description">Disable this if you are hitting API limits or prefer to trigger syncs manually.</p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" style="padding-bottom: 20px; font-style: italic; color: #646970;">
-                                <strong>Note:</strong> The manual "Sync Calendars Now" button below works completely independently of this setting. You can always trigger a manual sync even if the automatic cron is disabled.
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">Sync Calendars From</th>
-                            <td>
-                                <select name="pbe_avail_sync_source" id="pbe_avail_sync_source">
-                                    <option value="all" <?php selected(get_option('pbe_avail_sync_source', 'all'), 'all'); ?>>All Properties</option>
-                                    <option value="selected_ids" <?php selected(get_option('pbe_avail_sync_source'), 'selected_ids'); ?>>Selected Property IDs</option>
-                                </select>
-                            </td>
-                        </tr>
-                        <tr id="pbe_avail_sync_property_ids_wrapper" style="display:none;">
-                            <th scope="row">Specific Property IDs</th>
-                            <td>
-                                <input type="text" name="pbe_avail_sync_property_ids" id="pbe_avail_sync_property_ids" value="<?php echo esc_attr(get_option('pbe_avail_sync_property_ids')); ?>" class="regular-text">
-                                <p class="description">Enter comma-separated platform IDs (e.g. 5d8e9f2a, 6a1b2c3d)</p>
-                            </td>
-                        </tr>
-                    </table>
-                    <p>Trigger an immediate calendar availability sync based on the settings above.</p>
-                    <button class="button button-primary" id="pbe_avail_sync_now_btn">Sync Calendars Now</button>
-                    <span id="pbe_avail_sync_status" style="margin-left:10px; font-weight:bold;"></span>
-                    <div style="margin-top:10px;">
-                        <?php echo $this->get_last_sync_html('calendar'); ?>
-                    </div>
+                        <hr>
 
-                    <hr>
-                    
-                    <h3>Manual Review Sync</h3>
-                    <p>Trigger an immediate sync for all property reviews from the active platform.</p>
-                    <button type="button" class="button button-primary" id="pbe_sync_reviews_now_btn">Sync All Reviews Now</button>
-                    <span id="pbe_sync_reviews_status" style="margin-left:10px; font-weight:bold;">
-                        <?php 
-                        $platform_id = get_option('pbe_active_platform', 'guesty');
-                        $offset_key  = 'pbe_review_sync_last_offset_' . $platform_id;
-                        $saved_offset = get_option($offset_key, 0);
-                        if ($saved_offset > 0) {
-                            echo '<span style="color:#2271b1;"><span class="dashicons dashicons-update" style="font-size:18px; vertical-align:middle; margin-right:5px;"></span> Sync Status: ' . $saved_offset . ' properties processed. Click to resume from where you left off.</span>';
-                        }
-                        ?>
-                    </span>
-                    <div style="margin-top:10px;">
-                        <?php echo $this->get_last_sync_html('review'); ?>
-                    </div>
+                        <h3>Calendar Sync Settings</h3>
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row">Automatic 30-Min Sync</th>
+                                <td>
+                                    <select name="pbe_auto_avail_sync_enabled">
+                                        <option value="yes" <?php selected(get_option('pbe_auto_avail_sync_enabled', 'yes'), 'yes'); ?>>Enabled</option>
+                                        <option value="no" <?php selected(get_option('pbe_auto_avail_sync_enabled'), 'no'); ?>>Disabled (Manual Only)</option>
+                                    </select>
+                                    <p class="description">Disable this if you are hitting API limits or prefer to trigger syncs manually.</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="padding-bottom: 20px; font-style: italic; color: #646970;">
+                                    <strong>Note:</strong> The manual "Sync Calendars Now" button below works completely independently of this setting. You can always trigger a manual sync even if the automatic cron is disabled.
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Sync Calendars From</th>
+                                <td>
+                                    <select name="pbe_avail_sync_source" id="pbe_avail_sync_source">
+                                        <option value="all" <?php selected(get_option('pbe_avail_sync_source', 'all'), 'all'); ?>>All Properties</option>
+                                        <option value="selected_ids" <?php selected(get_option('pbe_avail_sync_source'), 'selected_ids'); ?>>Selected Property IDs</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr id="pbe_avail_sync_property_ids_wrapper" style="display:none;">
+                                <th scope="row">Specific Property IDs</th>
+                                <td>
+                                    <input type="text" name="pbe_avail_sync_property_ids" id="pbe_avail_sync_property_ids" value="<?php echo esc_attr(get_option('pbe_avail_sync_property_ids')); ?>" class="regular-text">
+                                    <p class="description">Enter comma-separated platform IDs (e.g. 5d8e9f2a, 6a1b2c3d)</p>
+                                </td>
+                            </tr>
+                        </table>
+                        <p>Trigger an immediate calendar availability sync based on the settings above.</p>
+                        <button class="button button-primary" id="pbe_avail_sync_now_btn">Sync Calendars Now</button>
+                        <span id="pbe_avail_sync_status" style="margin-left:10px; font-weight:bold;"></span>
+                        <div style="margin-top:10px;">
+                            <?php echo $this->get_last_sync_html('calendar'); ?>
+                        </div>
+
+                        <hr>
+                        
+                        <h3>Manual Review Sync</h3>
+                        <p>Trigger an immediate sync for all property reviews from the active platform.</p>
+                        <button type="button" class="button button-primary" id="pbe_sync_reviews_now_btn">Sync All Reviews Now</button>
+                        <span id="pbe_sync_reviews_status" style="margin-left:10px; font-weight:bold;">
+                            <?php 
+                            $platform_id = get_option('pbe_active_platform', 'guesty');
+                            $offset_key  = 'pbe_review_sync_last_offset_' . $platform_id;
+                            $saved_offset = get_option($offset_key, 0);
+                            if ($saved_offset > 0) {
+                                echo '<span style="color:#2271b1;"><span class="dashicons dashicons-update" style="font-size:18px; vertical-align:middle; margin-right:5px;"></span> Sync Status: ' . $saved_offset . ' properties processed. Click to resume from where you left off.</span>';
+                            }
+                            ?>
+                        </span>
+                        <div style="margin-top:10px;">
+                            <?php echo $this->get_last_sync_html('review'); ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- TAB: Payments -->

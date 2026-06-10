@@ -35,7 +35,8 @@ if ( $platform_source === 'hostaway' ) {
      data-property-id="<?php echo esc_attr( $property_id ); ?>"
      data-platform-id="<?php echo esc_attr( $platform_id ); ?>"
      data-platform-source="<?php echo esc_attr( $platform_source ); ?>"
-     data-booking-domain="<?php echo esc_attr( $booking_domain ); ?>">
+     data-booking-domain="<?php echo esc_attr( $booking_domain ); ?>"
+     data-custom-booking-url="<?php echo esc_attr( get_post_meta( $property_id, 'booking_url', true ) ); ?>">
     
     <div class="pbe-widget-price">
         <?php echo esc_html( $price_formatted ); ?> <span>/ night</span>

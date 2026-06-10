@@ -61,6 +61,9 @@ class PBE_Platform_Factory {
                 
                 return new PBE_Hostfully_Adapter( $api_key, $agency_uid );
 
+            case 'custom':
+                return new PBE_Custom_Adapter();
+
             default:
                 return new WP_Error( 'invalid_platform', 'Invalid or unsupported platform selected.' );
         }

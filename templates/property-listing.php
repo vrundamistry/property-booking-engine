@@ -327,7 +327,7 @@ if ( $show_map ) {
                                                 <?php foreach ( $gallery as $url ) : ?>
                                                     <div class="swiper-slide">
                                                         <a href="<?php echo esc_url( $book_link ); ?>">
-                                                            <img class="pbe-property-card-img" src="<?php echo esc_url( $url ); ?>" alt="<?php the_title_attribute(); ?>" loading="lazy">
+                                                            <img class="pbe-property-card-img" src="<?php echo esc_url( $url ); ?>" alt="<?php the_title_attribute(); ?>" loading="lazy" onerror="this.onerror=null; this.src='<?php echo esc_url( PBE_PLUGIN_URL . 'assets/images/placeholder.svg' ); ?>';">
                                                         </a>
                                                     </div>
                                                 <?php endforeach; ?>
@@ -338,7 +338,7 @@ if ( $show_map ) {
                                         </div>
                                     <?php else : ?>
                                         <a href="<?php echo esc_url( $book_link ); ?>">
-                                            <img class="pbe-property-card-img" src="<?php echo esc_url( $img_url ); ?>" alt="<?php the_title_attribute(); ?>" loading="lazy">
+                                            <img class="pbe-property-card-img" src="<?php echo esc_url( $img_url ); ?>" alt="<?php the_title_attribute(); ?>" loading="lazy" onerror="this.onerror=null; this.src='<?php echo esc_url( PBE_PLUGIN_URL . 'assets/images/placeholder.svg' ); ?>';">
                                         </a>
                                     <?php endif; ?>
                                 </div>

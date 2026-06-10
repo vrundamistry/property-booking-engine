@@ -546,7 +546,16 @@ jQuery(document).ready(function($) {
         }
 
         let bookingUrl = '';
-        if (platformSource === 'hostaway') {
+        if (platformSource === 'custom') {
+            const customUrl = $widget.data('custom-booking-url');
+            if (customUrl) {
+                const separator = customUrl.indexOf('?') !== -1 ? '&' : '?';
+                bookingUrl = `${customUrl}${separator}checkin=${checkin}&checkout=${checkout}&guests=${guests}`;
+            } else {
+                alert('No custom booking URL is configured for this property.');
+                return;
+            }
+        } else if (platformSource === 'hostaway') {
             // Holiday Future Format: https://{domain}/checkout/{id}?start=YYYY-MM-DD&end=YYYY-MM-DD&numberOfGuests=X
             bookingUrl = `https://${bookingDomain}/checkout/${platformId}?start=${checkin}&end=${checkout}&numberOfGuests=${guests}`;
         } else {
