@@ -31,7 +31,6 @@ require_once PBE_PLUGIN_DIR . 'includes/class-pbe-review-handler.php';
 require_once PBE_PLUGIN_DIR . 'includes/class-pbe-booking-handler.php';
 require_once PBE_PLUGIN_DIR . 'includes/class-pbe-availability-sync.php';
 require_once PBE_PLUGIN_DIR . 'includes/class-pbe-filter-helper.php';
-
 // Load Platform Adapters
 require_once PBE_PLUGIN_DIR . 'platforms/guesty/class-pbe-guesty-api.php';
 require_once PBE_PLUGIN_DIR . 'platforms/guesty/class-pbe-guesty-adapter.php';
@@ -41,6 +40,8 @@ require_once PBE_PLUGIN_DIR . 'platforms/ownerrez/class-pbe-ownerrez-api.php';
 require_once PBE_PLUGIN_DIR . 'platforms/ownerrez/class-pbe-ownerrez-adapter.php';
 require_once PBE_PLUGIN_DIR . 'platforms/hostfully/class-pbe-hostfully-api.php';
 require_once PBE_PLUGIN_DIR . 'platforms/hostfully/class-pbe-hostfully-adapter.php';
+require_once PBE_PLUGIN_DIR . 'platforms/custom/class-pbe-custom-api.php';
+require_once PBE_PLUGIN_DIR . 'platforms/custom/class-pbe-custom-adapter.php';
 
 /**
  * Initialize Plugin
